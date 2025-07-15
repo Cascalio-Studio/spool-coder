@@ -1,0 +1,16 @@
+pyserial>=3.5
+PyQt6>=6.2.0
+pynfc>=0.0.7
+pyusb>=1.2.0
+pillow>=9.0.0
+
+# Development dependencies
+pytest>=7.0.0
+pytest-cov>=3.0.0
+black>=22.1.0
+flake8>=4.0.1
+mypy>=0.931
+
+# Documentation
+sphinx>=4.4.0
+sphinx-rtd-theme>=1.0.0

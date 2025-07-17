@@ -32,14 +32,15 @@ class ReadView(QWidget):
         
         # Anweisungen
         instructions_label = QLabel(
-            "Halten Sie die Filamentspule an das NFC-Lesegerät und drücken Sie 'Auslesen'."
+            "Halten Sie die Bambu Lab Filamentspule an das NFC-Lesegerät und drücken Sie 'Auslesen'.\n"
+            "Der Algorithmus kann NFC-Tags im Bambu Lab Format entschlüsseln und validiert die gespeicherten Daten."
         )
         instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         instructions_label.setWordWrap(True)
         main_layout.addWidget(instructions_label)
         
         # Button zum Auslesen
-        self.read_button = QPushButton("Auslesen")
+        self.read_button = QPushButton("Bambu Lab Spule auslesen")
         self.read_button.clicked.connect(self.start_reading)
         main_layout.addWidget(self.read_button, 0, Qt.AlignmentFlag.AlignCenter)
         
@@ -117,11 +118,18 @@ class ReadView(QWidget):
         """
         Wird aufgerufen, wenn der Lesevorgang abgeschlossen ist
         """
-        # Simuliere das Lesen von Daten
+        # NFC Tag mit Bambu Lab Algorithmus lesen
         data = self.nfc_device.read_tag()
         
         if data:
             self.status_label.setText("Auslesen erfolgreich!")
+            
+            # Zeige erweiterte Erfolgsmeldung
+            QMessageBox.information(
+                self,
+                "Bambu Lab NFC Tag erkannt",
+                "Die Bambu Lab NFC Spule wurde erfolgreich ausgelesen und decodiert."
+            )
             
             # Konvertiere die Daten in ein FilamentSpool-Objekt und zeige sie an
             spool = FilamentSpool.from_dict(data)
@@ -129,6 +137,16 @@ class ReadView(QWidget):
             self.filament_details.setVisible(True)
         else:
             self.status_label.setText("Fehler: Keine Daten gefunden oder Spule nicht erkannt.")
+            
+            # Zeige detaillierte Fehlermeldung
+            QMessageBox.warning(
+                self,
+                "Fehler beim Lesen",
+                "Die Spule konnte nicht ausgelesen werden. Mögliche Gründe:\n\n"
+                "1. Keine Bambu Lab kompatible Spule erkannt\n"
+                "2. Beschädigte oder fehlerhafte NFC-Daten\n"
+                "3. NFC-Tag nicht innerhalb der Lesereichweite"
+            )
         
         # UI zurücksetzen
         self.read_button.setEnabled(True)

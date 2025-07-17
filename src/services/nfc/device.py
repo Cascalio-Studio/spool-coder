@@ -2,6 +2,8 @@
 Basis-Klasse für die NFC-Kommunikation mit dem Gerät
 """
 
+from .decoder import SpoolTagDecoder
+
 class NFCDevice:
     """
     Basisklasse zur Kommunikation mit dem NFC-Lesegerät
@@ -57,7 +59,16 @@ class NFCDevice:
             return None
             
         # Hier würde der Code zum Lesen des NFC-Tags stehen
-        # Simulation gelesener Daten
+        # Simulation gelesener Daten - kann ABS oder PLA sein
+        
+        # Simuliere ABS-Spule für Demo-Zwecke
+        sample_abs_payload = SpoolTagDecoder.create_sample_abs_payload()
+        decoded_spool = SpoolTagDecoder.decode_spool_data(sample_abs_payload)
+        
+        if decoded_spool:
+            return decoded_spool.to_dict()
+        
+        # Fallback zu ursprünglichen PLA-Daten
         return {
             "name": "Bambu PLA",
             "type": "PLA",

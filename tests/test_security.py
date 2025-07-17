@@ -168,6 +168,57 @@ class TestUnauthorizedNFCAccess:
         write_result = self.nfc_device.write_tag(test_data)
         assert write_result is True, "Authorized write access should succeed"
     
+    def test_issue_4_unauthorized_nfc_access_requirements(self):
+        """
+        Test for Issue #4: Security (Unauthorized NFC Access)
+        
+        Purpose: Verify denial of unauthorized NFC data access.
+        Input: Attempt unauthorized NFC data access via the application.
+        Steps: 1. Attempt to access NFC data without authorization.
+        Expected Output: - Access denied, - Security event logged
+        """
+        # Setup: Ensure not authorized (per step 1)
+        auth_service = get_auth_service()
+        auth_service.revoke_authorization()  # Ensure clean state
+        assert not auth_service.is_authorized(), "Should start unauthorized"
+        
+        # Create mock logger to capture security events
+        from unittest.mock import MagicMock
+        mock_logger = MagicMock()
+        original_logger = self.nfc_device.security_logger.logger
+        self.nfc_device.security_logger.logger = mock_logger
+        
+        try:
+            # Step 1: Attempt to access NFC data without authorization
+            read_result = self.nfc_device.read_tag()
+            write_result = self.nfc_device.write_tag({"test": "data"})
+            
+            # Expected Output 1: Access denied
+            assert read_result is None, "Read access should be denied (return None)"
+            assert write_result is False, "Write access should be denied (return False)"
+            
+            # Expected Output 2: Security event logged
+            assert mock_logger.warning.called, "Security events should be logged"
+            
+            # Verify specific security log messages
+            warning_calls = [str(call) for call in mock_logger.warning.call_args_list]
+            
+            # Check for unauthorized access attempt logs
+            unauthorized_logs = [log for log in warning_calls if 'UNAUTHORIZED ACCESS ATTEMPT' in log]
+            assert len(unauthorized_logs) >= 1, "Should log unauthorized access attempts"
+            
+            # Check for access denied logs
+            access_denied_logs = [log for log in warning_calls if 'ACCESS DENIED' in log]
+            assert len(access_denied_logs) >= 1, "Should log access denied events"
+            
+            print("✓ Issue #4 Requirements Met:")
+            print("  - Unauthorized access denied ✓")
+            print("  - Security events logged ✓")
+            
+        finally:
+            # Restore original logger
+            self.nfc_device.security_logger.logger = original_logger
+    
     def test_authorization_service_functionality(self):
         """
         Test: Authorization service basic functionality

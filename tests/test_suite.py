@@ -21,6 +21,14 @@ except ImportError:
     print("Skipping NFCDevice tests - module not available", file=sys.stderr)
 
 try:
+    # Try to import Bambu algorithm tests
+    from tests.unit.test_bambu_algorithm import TestBambuLabNFCAlgorithm
+    bambu_algorithm_available = True
+except ImportError:
+    bambu_algorithm_available = False
+    print("Skipping BambuLabNFCAlgorithm tests - module not available", file=sys.stderr)
+
+try:
     # Try to import UI tests
     from tests.unit.test_main_window import TestMainWindow
     main_window_available = True
@@ -62,6 +70,9 @@ def create_test_suite():
     # Add service tests
     if nfc_device_available:
         test_suite.addTest(loader.loadTestsFromTestCase(TestNFCDevice))
+    
+    if bambu_algorithm_available:
+        test_suite.addTest(loader.loadTestsFromTestCase(TestBambuLabNFCAlgorithm))
     
     # Add UI component tests
     if filament_detail_widget_available:

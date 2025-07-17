@@ -135,6 +135,12 @@ class MainWindow(QMainWindow):
         self.settings_button.clicked.connect(self.show_settings)
         self.menu_layout.addWidget(self.settings_button, 0, Qt.AlignmentFlag.AlignCenter)
         
+        # Demo NFC Algorithm
+        self.demo_button = QPushButton("NFC Algorithmus Demo")
+        self.demo_button.setStyleSheet(button_style)
+        self.demo_button.clicked.connect(self.show_demo_view)
+        self.menu_layout.addWidget(self.demo_button, 0, Qt.AlignmentFlag.AlignCenter)
+        
         # Info
         self.info_button = QPushButton("Info")
         self.info_button.setStyleSheet(button_style)
@@ -255,3 +261,23 @@ class MainWindow(QMainWindow):
         
         self.view_stack.addWidget(placeholder)
         self.view_stack.show()
+    
+    def show_demo_view(self):
+        """
+        Zeigt die Demo-Ansicht für den NFC-Algorithmus an
+        """
+        self.menu_container.hide()
+        self.welcome_label.hide()
+        self.description_label.hide()
+        
+        # Hier wird die DemoView zum view_stack hinzugefügt und angezeigt
+        from src.ui.views.demo_view import DemoView
+        
+        # Entferne alle vorherigen Widgets aus dem Stack
+        while self.view_stack.count() > 0:
+            self.view_stack.removeWidget(self.view_stack.widget(0))
+        
+        demo_view = DemoView(self)
+        self.view_stack.addWidget(demo_view)
+        self.view_stack.show()
+        self.statusBar.showMessage("NFC Algorithmus Demo")

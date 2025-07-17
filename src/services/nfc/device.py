@@ -1,6 +1,7 @@
 """
 Basis-Klasse für die NFC-Kommunikation mit dem Gerät
 """
+from .decoder import NFCDecoder, generate_sample_payload
 
 class NFCDevice:
     """
@@ -16,6 +17,7 @@ class NFCDevice:
         """
         self.port = port
         self.connected = False
+        self.decoder = NFCDecoder()
     
     def connect(self):
         """
@@ -57,19 +59,49 @@ class NFCDevice:
             return None
             
         # Hier würde der Code zum Lesen des NFC-Tags stehen
-        # Simulation gelesener Daten
-        return {
-            "name": "Bambu PLA",
-            "type": "PLA",
-            "color": "#FF0000",
-            "manufacturer": "Bambulab",
-            "density": 1.24,
-            "diameter": 1.75,
-            "nozzle_temp": 210,
-            "bed_temp": 60,
-            "remaining_length": 240,
-            "remaining_weight": 1000
-        }
+        # Für Tests verwenden wir simulierte Payload-Daten
+        sample_payload = generate_sample_payload('bambu_v1')
+        decoded_data = self.decoder.decode_payload(sample_payload)
+        
+        return decoded_data
+    
+    def read_tag_raw(self):
+        """
+        Liest rohe Binärdaten von einem NFC-Tag
+        
+        Returns:
+            bytes: Die rohen Daten oder None bei Fehler
+        """
+        if not self.connected:
+            return None
+            
+        # Hier würde der Code zum Lesen der rohen NFC-Tag-Daten stehen
+        # Für Tests verwenden wir simulierte Payload-Daten
+        return generate_sample_payload('bambu_v1')
+    
+    def decode_payload(self, payload):
+        """
+        Dekodiert rohe NFC-Payload-Daten
+        
+        Args:
+            payload (bytes): Rohe NFC-Payload-Daten
+            
+        Returns:
+            dict: Dekodierte Daten oder None bei Fehler
+        """
+        return self.decoder.decode_payload(payload)
+    
+    def batch_decode(self, payloads):
+        """
+        Dekodiert eine Liste von NFC-Payloads
+        
+        Args:
+            payloads (list): Liste von rohen NFC-Payload-Daten
+            
+        Returns:
+            list: Liste von dekodierten Daten
+        """
+        return self.decoder.batch_decode(payloads)
     
     def write_tag(self, data):
         """

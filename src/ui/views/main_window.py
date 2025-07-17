@@ -160,7 +160,7 @@ class MainWindow(QMainWindow):
         self.description_label.hide()
         
         # Hier würde die ReadView zum view_stack hinzugefügt und angezeigt werden
-        from ui.views.read_view import ReadView
+        from src.ui.views.read_view import ReadView
         
         # Entferne alle vorherigen Widgets aus dem Stack
         while self.view_stack.count() > 0:
@@ -180,7 +180,7 @@ class MainWindow(QMainWindow):
         self.description_label.hide()
         
         # Hier würde die WriteView zum view_stack hinzugefügt und angezeigt werden
-        from ui.views.write_view import WriteView
+        from src.ui.views.write_view import WriteView
         
         # Entferne alle vorherigen Widgets aus dem Stack
         while self.view_stack.count() > 0:
@@ -214,7 +214,7 @@ class MainWindow(QMainWindow):
         self.description_label.hide()
         
         # Hier würde die InfoView zum view_stack hinzugefügt und angezeigt werden
-        from ui.views.info_view import InfoView
+        from src.ui.views.info_view import InfoView
         
         # Entferne alle vorherigen Widgets aus dem Stack
         while self.view_stack.count() > 0:

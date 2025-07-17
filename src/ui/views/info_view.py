@@ -98,7 +98,7 @@ class InfoView(QWidget):
         Wird aufgerufen, wenn der Zurück-Button geklickt wird
         """
         # Finde das MainWindow-Objekt und rufe seine show_home-Methode auf
-        from ui.views.main_window import MainWindow
+        from src.ui.views.main_window import MainWindow
         
         # Suche nach dem MainWindow unter den Eltern-Widgets
         parent = self.parent()

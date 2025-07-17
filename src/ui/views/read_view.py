@@ -6,9 +6,9 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                            QLabel, QProgressBar, QMessageBox)
 from PyQt6.QtCore import Qt, QTimer, pyqtSlot
 
-from ui.components import FilamentDetailWidget
-from services.nfc import NFCDevice
-from models import FilamentSpool
+from src.ui.components import FilamentDetailWidget
+from src.services.nfc import NFCDevice
+from src.models import FilamentSpool
 
 class ReadView(QWidget):
     """
@@ -146,7 +146,7 @@ class ReadView(QWidget):
         self.nfc_device.disconnect()
         
         # Finde das MainWindow-Objekt und rufe seine show_home-Methode auf
-        from ui.views.main_window import MainWindow
+        from src.ui.views.main_window import MainWindow
         
         # Suche nach dem MainWindow unter den Eltern-Widgets
         parent = self.parent()

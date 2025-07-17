@@ -66,7 +66,17 @@ class FilamentSpool:
             
         Returns:
             FilamentSpool: Eine neue Filamentspule mit den gegebenen Daten
+            
+        Raises:
+            ValueError: Wenn die Daten ungültig sind
+            TypeError: Wenn data nicht ein Dictionary ist
         """
+        if data is None:
+            raise ValueError("Daten dürfen nicht None sein")
+        
+        if not isinstance(data, dict):
+            raise TypeError("Daten müssen ein Dictionary sein")
+        
         return cls(
             name=data.get("name", ""),
             type=data.get("type", "PLA"),
@@ -79,3 +89,30 @@ class FilamentSpool:
             remaining_length=data.get("remaining_length", 240),
             remaining_weight=data.get("remaining_weight", 1000)
         )
+    
+    @classmethod 
+    def from_dict_safe(cls, data):
+        """
+        Erstellt eine Filamentspule aus einem Dictionary mit sicherer Fehlerbehandlung
+        
+        Args:
+            data: Daten beliebigen Typs
+            
+        Returns:
+            tuple: (FilamentSpool or None, error_message or None)
+        """
+        try:
+            if data is None:
+                return None, "INVALID_TAG: Keine Daten vorhanden"
+            
+            if not isinstance(data, dict):
+                return None, "INVALID_TAG: Daten haben falsches Format"
+            
+            # Erstelle Filamentspule mit Standardwerten für fehlende Daten
+            spool = cls.from_dict(data)
+            return spool, None
+            
+        except (ValueError, TypeError) as e:
+            return None, f"INVALID_TAG: {str(e)}"
+        except Exception as e:
+            return None, f"INVALID_TAG: Unbekannter Fehler bei der Dekodierung"

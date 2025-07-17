@@ -71,6 +71,54 @@ class NFCDevice:
             "remaining_weight": 1000
         }
     
+    def read_tag_with_error_handling(self):
+        """
+        Liest Daten von einem NFC-Tag mit expliziter Fehlerbehandlung
+        
+        Returns:
+            tuple: (data, error_message) where data is dict or None, 
+                  error_message is string or None
+        """
+        if not self.connected:
+            return None, "ERROR:NO_DEVICE"
+            
+        # Hier würde der echte NFC-Lesevorgang stehen
+        # Simulation verschiedener Szenarien:
+        
+        try:
+            # Simulation eines erfolgreichen Lesevorgangs
+            data = {
+                "name": "Bambu PLA",
+                "type": "PLA", 
+                "color": "#FF0000",
+                "manufacturer": "Bambulab",
+                "density": 1.24,
+                "diameter": 1.75,
+                "nozzle_temp": 210,
+                "bed_temp": 60,
+                "remaining_length": 240,
+                "remaining_weight": 1000
+            }
+            
+            # Validiere die gelesenen Daten
+            if not isinstance(data, dict):
+                return None, "ERROR:INVALID_DATA"
+                
+            # Prüfe auf erforderliche Mindestdaten
+            if not data:
+                return None, "ERROR:NO_TAG"
+                
+            return data, None
+            
+        except Exception as e:
+            # Behandle verschiedene Fehlertypen
+            if "timeout" in str(e).lower():
+                return None, "ERROR:READ_TIMEOUT"
+            elif "corrupt" in str(e).lower():
+                return None, "ERROR:INVALID_DATA"
+            else:
+                return None, "ERROR:READ_FAILED"
+    
     def write_tag(self, data):
         """
         Schreibt Daten auf ein NFC-Tag

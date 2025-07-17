@@ -2,6 +2,8 @@
 Basis-Klasse für die NFC-Kommunikation mit dem Gerät
 """
 
+from .spool_decoder import SpoolDecoder
+
 class NFCDevice:
     """
     Basisklasse zur Kommunikation mit dem NFC-Lesegerät
@@ -16,6 +18,7 @@ class NFCDevice:
         """
         self.port = port
         self.connected = False
+        self.decoder = SpoolDecoder()
     
     def connect(self):
         """
@@ -51,14 +54,14 @@ class NFCDevice:
         Liest Daten von einem NFC-Tag
         
         Returns:
-            dict: Die gelesenen Daten oder None bei Fehler
+            FilamentSpool: Das dekodierte FilamentSpool-Objekt oder None bei Fehler
         """
         if not self.connected:
             return None
             
         # Hier würde der Code zum Lesen des NFC-Tags stehen
-        # Simulation gelesener Daten
-        return {
+        # Simulation gelesener Daten - in echter Implementierung käme das vom Hardware-Tag
+        simulated_payload = {
             "name": "Bambu PLA",
             "type": "PLA",
             "color": "#FF0000",
@@ -70,19 +73,26 @@ class NFCDevice:
             "remaining_length": 240,
             "remaining_weight": 1000
         }
+        
+        # Verwende den SpoolDecoder für robuste Dekodierung
+        return self.decoder.decode(simulated_payload)
     
     def write_tag(self, data):
         """
         Schreibt Daten auf ein NFC-Tag
         
         Args:
-            data (dict): Die zu schreibenden Daten
+            data (dict or FilamentSpool): Die zu schreibenden Daten
             
         Returns:
             bool: True bei erfolgreichem Schreiben, False sonst
         """
         if not self.connected:
             return False
+            
+        # Konvertiere FilamentSpool zu dict falls nötig
+        if hasattr(data, 'to_dict'):
+            data = data.to_dict()
             
         # Hier würde der Code zum Schreiben des NFC-Tags stehen
         # Simulation eines erfolgreichen Schreibvorgangs

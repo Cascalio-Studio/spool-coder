@@ -2,6 +2,9 @@
 Basis-Klasse für die NFC-Kommunikation mit dem Gerät
 """
 
+from .decoder import NFCDecoder
+
+
 class NFCDevice:
     """
     Basisklasse zur Kommunikation mit dem NFC-Lesegerät
@@ -70,6 +73,36 @@ class NFCDevice:
             "remaining_length": 240,
             "remaining_weight": 1000
         }
+    
+    def read_tag_raw(self):
+        """
+        Liest rohe Daten von einem NFC-Tag
+        
+        Returns:
+            bytes: Die rohen Daten oder None bei Fehler
+        """
+        if not self.connected:
+            return None
+            
+        # Hier würde der Code zum Lesen der rohen NFC-Tag-Daten stehen
+        # Simulation von rohen Daten basierend auf den simulierten gelesenen Daten
+        simulated_data = self.read_tag()
+        if simulated_data:
+            import json
+            return json.dumps(simulated_data, separators=(',', ':')).encode('utf-8')
+        return None
+    
+    def decode_tag_data(self, raw_data):
+        """
+        Dekodiert rohe NFC-Tag-Daten in eine FilamentSpool
+        
+        Args:
+            raw_data (bytes): Rohe NFC-Tag-Daten
+            
+        Returns:
+            FilamentSpool: Dekodierte Filamentspule oder None bei Fehler
+        """
+        return NFCDecoder.decode_payload(raw_data)
     
     def write_tag(self, data):
         """

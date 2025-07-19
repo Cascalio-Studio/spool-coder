@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QPushButton,
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont, QAction
 
+from src.ui.dialogs import NFCDeviceDialog
+
 class MainWindow(QMainWindow):
     """
     Hauptfenster der Spool-Coder Anwendung

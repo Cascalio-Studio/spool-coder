@@ -7,6 +7,8 @@ from PyQt6.QtWidgets import (QMainWindow, QWidget, QVBoxLayout, QPushButton,
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtGui import QIcon, QFont, QAction
 
+from src.ui.dialogs import NFCDeviceDialog
+
 class MainWindow(QMainWindow):
     """
     Hauptfenster der Spool-Coder Anwendung
@@ -135,6 +137,12 @@ class MainWindow(QMainWindow):
         self.settings_button.clicked.connect(self.show_settings)
         self.menu_layout.addWidget(self.settings_button, 0, Qt.AlignmentFlag.AlignCenter)
         
+        # Demo NFC Algorithm
+        self.demo_button = QPushButton("NFC Algorithmus Demo")
+        self.demo_button.setStyleSheet(button_style)
+        self.demo_button.clicked.connect(self.show_demo_view)
+        self.menu_layout.addWidget(self.demo_button, 0, Qt.AlignmentFlag.AlignCenter)
+        
         # Info
         self.info_button = QPushButton("Info")
         self.info_button.setStyleSheet(button_style)
@@ -160,7 +168,7 @@ class MainWindow(QMainWindow):
         self.description_label.hide()
         
         # Hier würde die ReadView zum view_stack hinzugefügt und angezeigt werden
-        from ui.views.read_view import ReadView
+        from src.ui.views.read_view import ReadView
         
         # Entferne alle vorherigen Widgets aus dem Stack
         while self.view_stack.count() > 0:
@@ -180,7 +188,7 @@ class MainWindow(QMainWindow):
         self.description_label.hide()
         
         # Hier würde die WriteView zum view_stack hinzugefügt und angezeigt werden
-        from ui.views.write_view import WriteView
+        from src.ui.views.write_view import WriteView
         
         # Entferne alle vorherigen Widgets aus dem Stack
         while self.view_stack.count() > 0:
@@ -214,7 +222,7 @@ class MainWindow(QMainWindow):
         self.description_label.hide()
         
         # Hier würde die InfoView zum view_stack hinzugefügt und angezeigt werden
-        from ui.views.info_view import InfoView
+        from src.ui.views.info_view import InfoView
         
         # Entferne alle vorherigen Widgets aus dem Stack
         while self.view_stack.count() > 0:
@@ -255,3 +263,23 @@ class MainWindow(QMainWindow):
         
         self.view_stack.addWidget(placeholder)
         self.view_stack.show()
+    
+    def show_demo_view(self):
+        """
+        Zeigt die Demo-Ansicht für den NFC-Algorithmus an
+        """
+        self.menu_container.hide()
+        self.welcome_label.hide()
+        self.description_label.hide()
+        
+        # Hier wird die DemoView zum view_stack hinzugefügt und angezeigt
+        from src.ui.views.demo_view import DemoView
+        
+        # Entferne alle vorherigen Widgets aus dem Stack
+        while self.view_stack.count() > 0:
+            self.view_stack.removeWidget(self.view_stack.widget(0))
+        
+        demo_view = DemoView(self)
+        self.view_stack.addWidget(demo_view)
+        self.view_stack.show()
+        self.statusBar.showMessage("NFC Algorithmus Demo")

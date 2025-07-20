@@ -6,9 +6,9 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                            QLabel, QProgressBar, QMessageBox)
 from PyQt6.QtCore import Qt, QTimer, pyqtSlot
 
-from ui.components import FilamentDetailWidget
-from services.nfc import NFCDevice
-from models import FilamentSpool
+from src.ui.components import FilamentDetailWidget
+from src.services.nfc import NFCDevice
+from src.models import FilamentSpool
 
 class WriteView(QWidget):
     """
@@ -32,7 +32,8 @@ class WriteView(QWidget):
         
         # Anweisungen
         instructions_label = QLabel(
-            "Geben Sie die Filament-Daten ein und drücken Sie 'Programmieren'."
+            "Geben Sie die Filament-Daten ein und drücken Sie 'Programmieren'.\n"
+            "Die Daten werden im Bambu Lab NFC Format codiert und sind mit Bambu Lab 3D-Druckern kompatibel."
         )
         instructions_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         instructions_label.setWordWrap(True)
@@ -58,7 +59,7 @@ class WriteView(QWidget):
         self.filament_details.set_data(default_data.to_dict())
         
         # Button zum Programmieren
-        self.write_button = QPushButton("Programmieren")
+        self.write_button = QPushButton("Als Bambu Lab Spule programmieren")
         self.write_button.clicked.connect(self.start_writing)
         main_layout.addWidget(self.write_button, 0, Qt.AlignmentFlag.AlignCenter)
         
@@ -153,27 +154,57 @@ class WriteView(QWidget):
         """
         Wird aufgerufen, wenn der Schreibvorgang abgeschlossen ist
         """
-        # Simuliere das Schreiben von Daten
+        # Hole die Daten aus dem Formular
         data = self.filament_details.get_data()
+        
+        # Schreibe die Daten mit dem Bambu Lab NFC Algorithmus
         success = self.nfc_device.write_tag(data)
         
         if success:
             self.status_label.setText("Programmieren erfolgreich!")
             
-            # Erfolgsmeldung anzeigen
+            # Detaillierte Erfolgsmeldung anzeigen
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Icon.Information)
-            msg_box.setText("Die Spule wurde erfolgreich programmiert.")
-            msg_box.setWindowTitle("Erfolg")
+            msg_box.setText("Die Spule wurde erfolgreich mit dem Bambu Lab NFC Format programmiert.")
+            msg_box.setInformativeText(
+                "Die folgenden Informationen wurden auf die Spule geschrieben:\n"
+                f"- Name: {data['name']}\n"
+                f"- Typ: {data['type']}\n"
+                f"- Hersteller: {data['manufacturer']}\n"
+                f"- Düsentemperatur: {data['nozzle_temp']}°C\n"
+                f"- Betttemperatur: {data['bed_temp']}°C"
+            )
+            msg_box.setDetailedText(
+                f"Vollständige Daten:\n"
+                f"Name: {data['name']}\n"
+                f"Typ: {data['type']}\n"
+                f"Farbe: {data['color']}\n"
+                f"Hersteller: {data['manufacturer']}\n"
+                f"Dichte: {data['density']} g/cm³\n"
+                f"Durchmesser: {data['diameter']} mm\n"
+                f"Düsentemperatur: {data['nozzle_temp']}°C\n"
+                f"Betttemperatur: {data['bed_temp']}°C\n"
+                f"Verbleibende Länge: {data['remaining_length']} m\n"
+                f"Verbleibendes Gewicht: {data['remaining_weight']} g"
+            )
+            msg_box.setWindowTitle("Erfolgreiche Programmierung")
             msg_box.exec()
         else:
             self.status_label.setText("Fehler: Programmieren fehlgeschlagen.")
             
-            # Fehlermeldung anzeigen
+            # Detaillierte Fehlermeldung anzeigen
             msg_box = QMessageBox()
             msg_box.setIcon(QMessageBox.Icon.Critical)
-            msg_box.setText("Beim Programmieren der Spule ist ein Fehler aufgetreten.")
-            msg_box.setWindowTitle("Fehler")
+            msg_box.setText("Beim Programmieren der Spule mit dem Bambu Lab NFC Format ist ein Fehler aufgetreten.")
+            msg_box.setInformativeText(
+                "Mögliche Ursachen:\n"
+                "1. Spule nicht im Lesebereich\n"
+                "2. Spule ist schreibgeschützt\n"
+                "3. Spule ist nicht kompatibel mit dem Bambu Lab Format\n"
+                "4. Hardware-Fehler am NFC-Lesegerät"
+            )
+            msg_box.setWindowTitle("Fehler beim Programmieren")
             msg_box.exec()
         
         # UI zurücksetzen
@@ -193,7 +224,7 @@ class WriteView(QWidget):
         self.nfc_device.disconnect()
         
         # Finde das MainWindow-Objekt und rufe seine show_home-Methode auf
-        from ui.views.main_window import MainWindow
+        from src.ui.views.main_window import MainWindow
         
         # Suche nach dem MainWindow unter den Eltern-Widgets
         parent = self.parent()

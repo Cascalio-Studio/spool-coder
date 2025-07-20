@@ -29,10 +29,10 @@ class BambuLabNFCDecoder:
     # Constants for tag decoding
     TAG_HEADER = b'\xaa\x55\xcc\x33'
     # XOR key used by Bambu Lab for basic obfuscation
-    XOR_KEY = bytes([
-        0xCB, 0x21, 0xAB, 0x7C, 0x9B, 0x75, 0x9F, 0x5A, 0x5C, 0xCC, 0x63, 0x65,
-        0x96, 0x53, 0x88, 0xA7, 0x1D, 0x7A, 0xAF, 0x44, 0x2B, 0x0E, 0x70, 0x91
-    ])
+    import os
+    XOR_KEY = bytes.fromhex(os.getenv("BAMBU_XOR_KEY", ""))
+    if not XOR_KEY:
+        raise ValueError("XOR_KEY is missing or invalid. Please set the BAMBU_XOR_KEY environment variable.")
     
     # Tag data sections
     SPOOL_DATA_OFFSET = 128

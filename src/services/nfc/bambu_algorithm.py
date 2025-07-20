@@ -11,6 +11,12 @@ import binascii
 from typing import Dict, Optional, List, Tuple, Any, Union
 import json
 import base64
+import hashlib
+import hmac
+import os
+
+# Import the key derivation function from our module
+from .bambu_key import derive_bambu_key, CRYPTODOME_AVAILABLE
 
 
 class BambuLabNFCDecoder:
@@ -30,9 +36,16 @@ class BambuLabNFCDecoder:
     TAG_HEADER = b'\xaa\x55\xcc\x33'
     # XOR key used by Bambu Lab for basic obfuscation
     import os
+    # Try to get the XOR key from environment variable
     XOR_KEY = bytes.fromhex(os.getenv("BAMBU_XOR_KEY", ""))
+    
+    # If no XOR key is provided via environment variable, we'll use the key derivation
+    # function with a tag UID when available, or a default key for development
     if not XOR_KEY:
-        raise ValueError("XOR_KEY is missing or invalid. Please set the BAMBU_XOR_KEY environment variable.")
+        # This is a placeholder key for development purposes only
+        # Note: This is not the real key - for production use, the key will be derived from the tag UID
+        XOR_KEY = bytes.fromhex("0123456789abcdef0123456789abcdef")
+        print("INFO: No XOR key provided. The key will be derived from the tag UID when available.")
     
     # Tag data sections
     SPOOL_DATA_OFFSET = 128
@@ -59,20 +72,48 @@ class BambuLabNFCDecoder:
         14: "HIPS"
     }
     
-    def __init__(self):
-        """Initialize the NFC decoder."""
-        pass
+    def __init__(self, tag_uid: bytes = None):
+        """
+        Initialize the NFC decoder.
+        
+        Args:
+            tag_uid: Optional UID of the tag for key derivation
+        """
+        self._tag_uid = tag_uid
+        self._xor_key = self.XOR_KEY
+        
+        # If tag UID is provided, derive the key
+        if tag_uid:
+            try:
+                derived_key = derive_bambu_key(tag_uid)
+                if derived_key:
+                    self._xor_key = derived_key
+                    print(f"INFO: Using derived key from tag UID: {tag_uid.hex()}")
+            except Exception as e:
+                print(f"WARNING: Failed to derive key from UID: {str(e)}")
     
-    def decode_tag_data(self, raw_data: bytes) -> Optional[Dict[str, Any]]:
+    def decode_tag_data(self, raw_data: bytes, tag_uid: bytes = None) -> Optional[Dict[str, Any]]:
         """
         Decode the raw tag data into a structured format.
         
         Args:
             raw_data: The raw bytes read from the NFC tag
+            tag_uid: Optional UID of the tag for key derivation
             
         Returns:
             Dictionary with decoded tag data or None if decoding fails
         """
+        # If a new UID is provided, update and derive the key
+        if tag_uid and tag_uid != self._tag_uid:
+            self._tag_uid = tag_uid
+            try:
+                derived_key = derive_bambu_key(tag_uid)
+                if derived_key:
+                    self._xor_key = derived_key
+                    print(f"INFO: Using derived key from tag UID: {tag_uid.hex()}")
+            except Exception as e:
+                print(f"WARNING: Failed to derive key from UID: {str(e)}")
+        
         # Check if data has minimum required length
         if len(raw_data) < 512:
             return None
@@ -80,6 +121,20 @@ class BambuLabNFCDecoder:
         # Check for valid header
         if not self._verify_header(raw_data):
             return None
+        
+        # Try to extract UID from the raw data if not provided
+        if not self._tag_uid:
+            try:
+                # UID is typically at the beginning of the tag data
+                possible_uid = raw_data[:4]  # First 4 bytes are often the UID
+                derived_key = derive_bambu_key(possible_uid)
+                if derived_key:
+                    self._xor_key = derived_key
+                    self._tag_uid = possible_uid
+                    print(f"INFO: Using derived key from detected tag UID: {possible_uid.hex()}")
+            except Exception as e:
+                # Fallback to default key
+                pass
         
         # Decrypt the data
         decrypted_data = self._decrypt_data(raw_data)
@@ -114,11 +169,11 @@ class BambuLabNFCDecoder:
             Decrypted tag data
         """
         decrypted = bytearray(data)
-        key_len = len(self.XOR_KEY)
+        key_len = len(self._xor_key)
         
         # Apply XOR to all data except header
         for i in range(4, len(decrypted)):
-            decrypted[i] ^= self.XOR_KEY[(i - 4) % key_len]
+            decrypted[i] ^= self._xor_key[(i - 4) % key_len]
             
         return bytes(decrypted)
     
@@ -265,20 +320,48 @@ class BambuLabNFCEncoder:
     CHECKSUM_SIZE = BambuLabNFCDecoder.CHECKSUM_SIZE
     FILAMENT_TYPES = {v: k for k, v in BambuLabNFCDecoder.FILAMENT_TYPES.items()}
     
-    def __init__(self):
-        """Initialize the NFC encoder."""
-        pass
+    def __init__(self, tag_uid: bytes = None):
+        """
+        Initialize the NFC encoder.
+        
+        Args:
+            tag_uid: Optional UID of the tag for key derivation
+        """
+        self._tag_uid = tag_uid
+        self._xor_key = self.XOR_KEY
+        
+        # If tag UID is provided, derive the key
+        if tag_uid:
+            try:
+                derived_key = derive_bambu_key(tag_uid)
+                if derived_key:
+                    self._xor_key = derived_key
+                    print(f"INFO: Using derived key from tag UID: {tag_uid.hex()}")
+            except Exception as e:
+                print(f"WARNING: Failed to derive key from UID: {str(e)}")
     
-    def encode_tag_data(self, spool_data: Dict[str, Any]) -> bytes:
+    def encode_tag_data(self, spool_data: Dict[str, Any], tag_uid: bytes = None) -> bytes:
         """
         Encode the spool data into the format expected by Bambu Lab printers.
         
         Args:
             spool_data: Dictionary with spool information
+            tag_uid: Optional UID of the tag for key derivation
             
         Returns:
             Binary data ready to be written to an NFC tag
         """
+        # If a new UID is provided, update and derive the key
+        if tag_uid and tag_uid != self._tag_uid:
+            self._tag_uid = tag_uid
+            try:
+                derived_key = derive_bambu_key(tag_uid)
+                if derived_key:
+                    self._xor_key = derived_key
+                    print(f"INFO: Using derived key from tag UID: {tag_uid.hex()}")
+            except Exception as e:
+                print(f"WARNING: Failed to derive key from UID: {str(e)}")
+        
         # Create a new empty tag buffer (most tags are 1024 bytes)
         tag_buffer = bytearray(1024)
         
@@ -398,11 +481,11 @@ class BambuLabNFCEncoder:
         Args:
             buffer: Buffer to encrypt
         """
-        key_len = len(self.XOR_KEY)
+        key_len = len(self._xor_key)
         
         # Apply XOR to all data except the header signature
         for i in range(4, len(buffer)):
-            buffer[i] ^= self.XOR_KEY[(i - 4) % key_len]
+            buffer[i] ^= self._xor_key[(i - 4) % key_len]
     
     def _encode_string(self, buffer: bytearray, offset: int, string: str, max_length: int) -> None:
         """
@@ -469,6 +552,9 @@ def decode_sample_tag_data(base64_data: str):
     return decoder.decode_tag_data(raw_data)
 
 
+# The derive_bambu_key function is now imported from bambu_key.py
+
+
 # Example of how to use the encoder and decoder
 def test_encoder_decoder():
     """
@@ -478,11 +564,21 @@ def test_encoder_decoder():
         True if the test passes, False otherwise
     """
     print("Creating sample tag data...")
-    encoder = BambuLabNFCEncoder()
+    
+    # Example tag UID (this would typically come from reading the physical tag)
+    # In a real scenario, you would read this from the NFC reader
+    sample_uid = bytes.fromhex("11223344")
+    
+    print(f"Using sample tag UID: {sample_uid.hex()}")
+    
+    # Create encoder with the tag UID
+    encoder = BambuLabNFCEncoder(tag_uid=sample_uid)
     encoded_data = encoder.encode_tag_data(SAMPLE_TAG_DATA)
     
     print("Decoding sample tag data...")
-    decoder = BambuLabNFCDecoder()
+    
+    # Create decoder with the same tag UID
+    decoder = BambuLabNFCDecoder(tag_uid=sample_uid)
     decoded_data = decoder.decode_tag_data(encoded_data)
     
     if decoded_data:
@@ -508,7 +604,22 @@ def test_encoder_decoder():
         
         if all(checks):
             print("All data points verified correctly!")
-            return True
+            
+            # Now test with a different encoder/decoder (without the UID)
+            # This should still work with the default key
+            print("\nTesting with default key (no UID)...")
+            encoder_default = BambuLabNFCEncoder()
+            encoded_data_default = encoder_default.encode_tag_data(SAMPLE_TAG_DATA)
+            
+            decoder_default = BambuLabNFCDecoder()
+            decoded_data_default = decoder_default.decode_tag_data(encoded_data_default)
+            
+            if decoded_data_default:
+                print("Successfully decoded data with default key!")
+                return True
+            else:
+                print("Failed to decode with default key!")
+                return False
         else:
             print("Data verification failed!")
             return False

@@ -17,6 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 # Flag zur Steuerung des Simulationsmodus
 SIMULATION_MODE = os.getenv('SIMULATION_MODE', 'True').lower() == 'true'  # Standardmäßig True, falls nicht gesetzt
+SIMULATION_FAILURE_RATE = float(os.getenv('SIMULATION_FAILURE_RATE', '0.1'))  # Standardmäßig 10% Fehlerrate
 logger.info(f"SIMULATION_MODE konfiguriert als {'True' if SIMULATION_MODE else 'False'} über Umgebungsvariable.")
 
 # Import nfcpy Bibliothek, falls verfügbar

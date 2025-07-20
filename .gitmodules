@@ -1,0 +1,3 @@
+[submodule "vendor/bambu-research"]
+	path = vendor/bambu-research
+	url = https://github.com/Bambu-Research-Group/RFID-Tag-Guide.git

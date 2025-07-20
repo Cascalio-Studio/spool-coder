@@ -347,7 +347,7 @@ class NFCDevice:
             if self.simulation_mode:
                 time.sleep(1.0)  # Simuliere Schreibzeit
                 # Simuliere ein erfolgreiches oder fehlgeschlagenes Schreiben
-                success = random.random() > 0.1  # 90% Erfolgsrate
+                success = random.random() > SIMULATION_FAILURE_RATE  # 90% Erfolgsrate
                 if success:
                     logger.info("Simulation: Daten erfolgreich auf NFC-Tag geschrieben.")
                 else:

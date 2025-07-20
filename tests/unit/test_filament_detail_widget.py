@@ -86,7 +86,9 @@ class TestFilamentDetailWidget(unittest.TestCase):
         # Check if result spool has correct data
         self.assertEqual(result_spool.name, "Test PLA")
         self.assertEqual(result_spool.type, "PLA")
-        self.assertEqual(result_spool.color, "#00ff00")  # Color may be normalized to lowercase
+        # Verify that the color is normalized to lowercase hexadecimal format
+        expected_color = "#00ff00"
+        self.assertEqual(result_spool.color, expected_color)
         self.assertEqual(result_spool.manufacturer, "TestMaker")
         self.assertEqual(result_spool.density, 1.24)
         self.assertEqual(result_spool.diameter, 1.75)

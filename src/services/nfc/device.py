@@ -16,7 +16,8 @@ logger = logging.getLogger('nfc_device')
 logging.basicConfig(level=logging.INFO)
 
 # Flag zur Steuerung des Simulationsmodus
-SIMULATION_MODE = True  # Auf False setzen, um mit echtem NFC-Gerät zu arbeiten
+SIMULATION_MODE = os.getenv('SIMULATION_MODE', 'True').lower() == 'true'  # Standardmäßig True, falls nicht gesetzt
+logger.info(f"SIMULATION_MODE konfiguriert als {'True' if SIMULATION_MODE else 'False'} über Umgebungsvariable.")
 
 # Import nfcpy Bibliothek, falls verfügbar
 NFC_AVAILABLE = False

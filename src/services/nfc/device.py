@@ -176,7 +176,7 @@ class NFCDevice:
                 time.sleep(0.5)  # Simuliere Lesezeit
                 
                 # Simuliere ein erfolgreiches oder fehlgeschlagenes Lesen
-                if random.random() > 0.1:  # 90% Erfolgsrate
+                if random.random() > SIMULATION_FAILURE_RATE:  # 90% Erfolgsrate
                     # Simuliere Rohdaten von einem NFC-Tag
                     raw_data = self._simulate_read_raw_tag_data()
                     logger.info("Simulation: NFC-Tag erfolgreich gelesen.")

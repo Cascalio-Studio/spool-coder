@@ -108,7 +108,7 @@ class LogoWidget(QLabel):
         """Create a logo from SVG file or fallback to placeholder"""
         # Try to load SVG logo first if SVG support is available
         if SVG_AVAILABLE:
-            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'logo.svg')
+            logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'assets', 'logo_startup.svg')
             
             if os.path.exists(logo_path):
                 try:
@@ -164,7 +164,9 @@ class StartupScreen(QWidget):
     
     def __init__(self, initialization_tasks: list = None, parent=None):
         super().__init__(parent)
-        self.initialization_tasks = initialization_tasks or self.get_default_tasks()        # Window setup
+        self.initialization_tasks = initialization_tasks or self.get_default_tasks()
+        
+        # Window setup
         self.setWindowFlags(Qt.WindowType.SplashScreen | Qt.WindowType.FramelessWindowHint)
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setFixedSize(500, 400)  # Much larger window
@@ -260,8 +262,6 @@ class StartupScreen(QWidget):
         font = QFont("Arial", 8)
         self.version_label.setFont(font)
         self.version_label.setStyleSheet("color: #81A1C1; margin: 10px 0px;")
-        frame_layout.addWidget(self.version_label)
-        self.version_label.setStyleSheet("color: #81A1C1;")
         frame_layout.addWidget(self.version_label)
         
         main_layout.addWidget(self.background_frame)

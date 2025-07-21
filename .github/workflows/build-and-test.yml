@@ -1,0 +1,178 @@
+name: Build and Test SpoolCoder
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11, 3.12, 3.13]
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libgl1-mesa-glx \
+          libglib2.0-0 \
+          libxrender1 \
+          libxrandr2 \
+          libxss1 \
+          libgtk-3-0 \
+          libgconf-2-4 \
+          libasound2 \
+          libxtst6 \
+          libxcomposite1 \
+          libxcursor1 \
+          libxdamage1 \
+          libxi6 \
+          libxtst6 \
+          libnss3 \
+          libcups2 \
+          libxss1 \
+          libgconf-2-4 \
+          libxrandr2 \
+          libasound2 \
+          libpangocairo-1.0-0 \
+          libatk1.0-0 \
+          libcairo-gobject2 \
+          libgtk-3-0 \
+          libgdk-pixbuf2.0-0
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-cov pytest-xvfb
+
+    - name: Run tests with coverage
+      run: |
+        export QT_QPA_PLATFORM=offscreen
+        python -m pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
+      env:
+        DISPLAY: ":99.0"
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+
+  build-windows:
+    needs: test
+    runs-on: windows-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.11
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+
+    - name: Run tests on Windows
+      run: |
+        python -m pytest tests/ -v
+      env:
+        QT_QPA_PLATFORM: offscreen
+
+    - name: Build executable with PyInstaller
+      run: |
+        python build.py --skip-tests
+
+    - name: Test executable
+      run: |
+        # Test that the executable was created
+        if (Test-Path "dist/SpoolCoder.exe") {
+          Write-Host "✅ Executable created successfully"
+          Get-ChildItem "dist/SpoolCoder.exe" | Format-List Name, Length, LastWriteTime
+        } else {
+          Write-Host "❌ Executable not found"
+          exit 1
+        }
+
+    - name: Create release asset info
+      run: |
+        $version = Get-Date -Format "yyyy.MM.dd-HHmm"
+        $commit = "${{ github.sha }}".Substring(0,7)
+        $filename = "SpoolCoder-v$version-$commit-windows.exe"
+        
+        # Rename the executable
+        Copy-Item "dist/SpoolCoder.exe" "dist/$filename"
+        
+        # Create a simple info file
+        @"
+        SpoolCoder Windows Executable
+        Version: $version
+        Commit: ${{ github.sha }}
+        Build Date: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss UTC')
+        "@ | Out-File -FilePath "dist/build-info.txt" -Encoding UTF8
+
+    - name: Upload executable as artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: SpoolCoder-Windows-Build
+        path: |
+          dist/SpoolCoder*.exe
+          dist/build-info.txt
+          dist/RELEASE_NOTES.md
+        retention-days: 90
+
+    - name: Create Release on Tag
+      if: github.event_name == 'release'
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/SpoolCoder*.exe
+          dist/RELEASE_NOTES.md
+        body_path: dist/RELEASE_NOTES.md
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-notification:
+    needs: [test, build-windows]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Build Status Notification
+      run: |
+        if [[ "${{ needs.test.result }}" == "success" && "${{ needs.build-windows.result }}" == "success" ]]; then
+          echo "✅ Build and tests successful! Windows executable created."
+        elif [[ "${{ needs.test.result }}" == "failure" ]]; then
+          echo "❌ Tests failed. Executable not created."
+          exit 1
+        elif [[ "${{ needs.build-windows.result }}" == "failure" ]]; then
+          echo "⚠️ Tests passed but Windows build failed."
+          exit 1
+        else
+          echo "ℹ️ Build completed with status: tests=${{ needs.test.result }}, build=${{ needs.build-windows.result }}"
+        fi

@@ -38,8 +38,11 @@ class TestWriteView(unittest.TestCase):
         )
         
         # Create WriteView instance for testing
-        with patch('src.services.nfc.device.NFCDevice', return_value=self.mock_nfc_device):
-            self.view = WriteView()
+        self.view = WriteView()
+        # Replace the nfc_device with our mock after creation
+        self.view.nfc_device = self.mock_nfc_device
+        # Enable testing mode to skip timer delays
+        self.view._testing_mode = True
     
     def tearDown(self):
         """Clean up after each test"""
@@ -176,18 +179,18 @@ class TestWriteView(unittest.TestCase):
     
     def test_on_back_clicked(self):
         """Test back button click"""
-        # Mock parent (MainWindow)
-        mock_parent = MagicMock()
-        mock_parent.show_home = MagicMock()
+        # Mock the parent() method to return a MainWindow mock
+        from src.ui.views.main_window import MainWindow
+        mock_main_window = MagicMock(spec=MainWindow)
+        mock_main_window.show_home = MagicMock()
         
-        # Set mock parent
-        self.view.parent = MagicMock(return_value=mock_parent)
-        
-        # Call back button click
-        self.view.on_back_clicked()
-        
-        # Check if show_home was called
-        mock_parent.show_home.assert_called_once()
+        # Patch the parent method to return our mock
+        with patch.object(self.view, 'parent', return_value=mock_main_window):
+            # Call back button click
+            self.view.on_back_clicked()
+            
+            # Check if show_home was called
+            mock_main_window.show_home.assert_called_once()
 
 if __name__ == "__main__":
     unittest.main()

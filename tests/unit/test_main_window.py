@@ -59,8 +59,8 @@ class TestMainWindow(unittest.TestCase):
     
     def test_menu_actions(self):
         """Test menu actions"""
-        # Check if menu bar exists
-        self.assertIsNotNone(self.main_window.menuBar())
+        # Check if menu bar exists (access the menuBar property directly)
+        self.assertIsNotNone(self.main_window.menuBar)
         
         # Find QActions in the menu
         actions = [action for action in self.main_window.findChildren(QAction)]

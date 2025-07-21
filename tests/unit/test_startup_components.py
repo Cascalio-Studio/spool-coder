@@ -55,7 +55,12 @@ class TestStartupComponents(unittest.TestCase):
 
 def test_startup_functionality():
     """Legacy function for backwards compatibility"""
-    unittest.main()
+    # Just run a simple test instead of calling unittest.main()
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestStartupComponents)
+    runner = unittest.TextTestRunner(verbosity=0, stream=open(os.devnull, 'w'))
+    result = runner.run(suite)
+    # Return True if all tests passed
+    assert result.wasSuccessful(), f"Startup functionality tests failed: {len(result.failures)} failures, {len(result.errors)} errors"
 
 if __name__ == "__main__":
     unittest.main()

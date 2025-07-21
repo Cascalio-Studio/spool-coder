@@ -51,7 +51,10 @@ class NFCDevice:
         self.connected = False
         self.clf = None  # NFC ContactLess Frontend
         self.tag = None  # Aktueller NFC-Tag
-        self.encoder = BambuLabNFCEncoder()
+        
+        # Initialize encoder and decoder with consistent UID for simulation
+        self.simulation_uid = b'\xaa\x55\xcc\x33'  # Consistent UID for simulation
+        self.encoder = BambuLabNFCEncoder(tag_uid=self.simulation_uid)
         self.decoder = BambuLabNFCDecoder()
         
         # Simulationsmodus bestimmen
@@ -176,8 +179,12 @@ class NFCDevice:
             if self.simulation_mode:
                 time.sleep(0.5)  # Simuliere Lesezeit
                 
-                # Simuliere ein erfolgreiches oder fehlgeschlagenes Lesen
-                if random.random() > SIMULATION_FAILURE_RATE:  # 90% Erfolgsrate
+                # In test mode, always succeed; otherwise use random failure rate
+                if hasattr(self, '_testing_mode') and self._testing_mode:
+                    # Always succeed in testing mode
+                    raw_data = self._simulate_read_raw_tag_data()
+                    logger.info("Simulation: NFC-Tag erfolgreich gelesen.")
+                elif random.random() > SIMULATION_FAILURE_RATE:  # 90% Erfolgsrate in normal mode
                     # Simuliere Rohdaten von einem NFC-Tag
                     raw_data = self._simulate_read_raw_tag_data()
                     logger.info("Simulation: NFC-Tag erfolgreich gelesen.")
@@ -210,7 +217,7 @@ class NFCDevice:
                 logger.info(f"Rohdaten vom Tag gelesen: {len(raw_data)} Bytes")
             
             # Decodiere die Daten mit dem Bambu Lab NFC Decoder
-            decoded_data = self.decoder.decode_tag_data(raw_data)
+            decoded_data = self.decoder.decode_tag_data(raw_data, tag_uid=self.simulation_uid)
             
             if decoded_data:
                 logger.info("Bambu Lab NFC-Tag erfolgreich decodiert.")
@@ -347,13 +354,20 @@ class NFCDevice:
             # Simulationsmodus
             if self.simulation_mode:
                 time.sleep(1.0)  # Simuliere Schreibzeit
-                # Simuliere ein erfolgreiches oder fehlgeschlagenes Schreiben
-                success = random.random() > SIMULATION_FAILURE_RATE  # 90% Erfolgsrate
-                if success:
+                
+                # In test mode, always succeed; otherwise use random failure rate
+                if hasattr(self, '_testing_mode') and self._testing_mode:
+                    # Always succeed in testing mode
                     logger.info("Simulation: Daten erfolgreich auf NFC-Tag geschrieben.")
+                    return True
                 else:
-                    logger.warning("Simulation: Fehler beim Schreiben auf den NFC-Tag.")
-                return success
+                    # Simuliere ein erfolgreiches oder fehlgeschlagenes Schreiben
+                    success = random.random() > SIMULATION_FAILURE_RATE  # 90% Erfolgsrate
+                    if success:
+                        logger.info("Simulation: Daten erfolgreich auf NFC-Tag geschrieben.")
+                    else:
+                        logger.warning("Simulation: Fehler beim Schreiben auf den NFC-Tag.")
+                    return success
             
             # Echtgeräte-Modus
             else:

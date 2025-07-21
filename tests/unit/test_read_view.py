@@ -38,8 +38,11 @@ class TestReadView(unittest.TestCase):
         }
         
         # Create ReadView instance for testing
-        with patch('src.services.nfc.device.NFCDevice', return_value=self.mock_nfc_device):
-            self.view = ReadView()
+        self.view = ReadView()
+        # Replace the nfc_device with our mock after creation
+        self.view.nfc_device = self.mock_nfc_device
+        # Enable testing mode to skip timer delays
+        self.view._testing_mode = True
     
     def tearDown(self):
         """Clean up after each test"""

@@ -70,10 +70,10 @@ class TestFilamentDetailWidget(unittest.TestCase):
         self.assertEqual(self.widget.remaining_length_spin.value(), 240)
         self.assertEqual(self.widget.remaining_weight_spin.value(), 1000)
         
-        # Check color button
+        # Check color (stored in color_edit field and color_preview widget)
         color = QColor(self.test_spool.color)
-        button_color = self.widget.color_button.palette().button().color()
-        self.assertEqual(button_color.name(), color.name())
+        stored_color = self.widget.color_edit.text()
+        self.assertEqual(stored_color.lower(), color.name().lower())
     
     def test_get_form_data(self):
         """Test getting form data as FilamentSpool"""

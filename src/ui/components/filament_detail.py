@@ -194,7 +194,7 @@ class FilamentDetailWidget(QWidget):
         return {
             "name": self.name_edit.text(),
             "type": self.type_edit.text(),
-            "color": self.color_edit.text(),
+            "color": self.color_edit.text().lower(),  # Ensure lowercase hex format
             "manufacturer": self.manufacturer_edit.text(),
             "density": self.density_spin.value(),
             "diameter": self.diameter_spin.value(),

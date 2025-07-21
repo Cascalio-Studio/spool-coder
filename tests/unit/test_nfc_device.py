@@ -12,6 +12,8 @@ class TestNFCDevice(unittest.TestCase):
         """Set up test cases"""
         # Create an NFC device for testing
         self.device = NFCDevice(port="TEST_PORT")
+        # Enable testing mode to ensure consistent behavior
+        self.device._testing_mode = True
         
         # Sample data for testing
         self.test_data = {

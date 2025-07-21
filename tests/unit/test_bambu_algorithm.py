@@ -11,7 +11,9 @@ class TestBambuLabNFCAlgorithm(unittest.TestCase):
     
     def setUp(self):
         """Set up the test case"""
-        self.encoder = BambuLabNFCEncoder()
+        # Use consistent UID for both encoder and decoder
+        self.test_uid = b'\xaa\x55\xcc\x33'
+        self.encoder = BambuLabNFCEncoder(tag_uid=self.test_uid)
         self.decoder = BambuLabNFCDecoder()
         self.test_data = SAMPLE_TAG_DATA.copy()
     
@@ -32,7 +34,7 @@ class TestBambuLabNFCAlgorithm(unittest.TestCase):
         encoded = self.encoder.encode_tag_data(self.test_data)
         
         # Decode it back
-        decoded = self.decoder.decode_tag_data(encoded)
+        decoded = self.decoder.decode_tag_data(encoded, tag_uid=self.test_uid)
         
         # Verify the data was preserved
         self.assertIsNotNone(decoded)
@@ -73,7 +75,7 @@ class TestBambuLabNFCAlgorithm(unittest.TestCase):
         self.assertIsNone(result)
         
         # But the original should still decode correctly
-        result_original = self.decoder.decode_tag_data(encoded)
+        result_original = self.decoder.decode_tag_data(encoded, tag_uid=self.test_uid)
         self.assertIsNotNone(result_original)
     
     def test_header_validation(self):
@@ -99,7 +101,7 @@ class TestBambuLabNFCAlgorithm(unittest.TestCase):
             
             # Encode and decode
             encoded = self.encoder.encode_tag_data(self.test_data)
-            decoded = self.decoder.decode_tag_data(encoded)
+            decoded = self.decoder.decode_tag_data(encoded, tag_uid=self.test_uid)
             
             # Verify the filament type was preserved
             self.assertEqual(decoded["spool_data"]["type"], filament_type)
@@ -118,7 +120,7 @@ class TestBambuLabNFCAlgorithm(unittest.TestCase):
         self.assertEqual(decoded_bytes, encoded)
         
         # Parse the decoded data
-        result = self.decoder.decode_tag_data(decoded_bytes)
+        result = self.decoder.decode_tag_data(decoded_bytes, tag_uid=self.test_uid)
         self.assertIsNotNone(result)
         self.assertEqual(result["spool_data"]["name"], self.test_data["spool_data"]["name"])
 

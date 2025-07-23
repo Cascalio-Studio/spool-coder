@@ -35,8 +35,6 @@ def setup_application():
     app.setOrganizationDomain("cascalio-studio.com")
     app.setApplicationName("Spool-Coder")
     app.setApplicationVersion("0.2.0")
-    app.setApplicationName("Spool-Coder")
-    app.setApplicationVersion("0.1.1")
     app.setOrganizationName("Cascalio Studio")
     app.setOrganizationDomain("cascalio.studio")
     

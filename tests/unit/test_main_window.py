@@ -40,9 +40,9 @@ class TestMainWindow(unittest.TestCase):
         # Test if status bar exists
         self.assertIsNotNone(self.main_window.statusBar)
         
-        # Test window size
-        self.assertGreaterEqual(self.main_window.minimumSize().width(), 800)
-        self.assertGreaterEqual(self.main_window.minimumSize().height(), 600)
+        # Test window size (angepasst an neue Mindestgröße)
+        self.assertGreaterEqual(self.main_window.minimumSize().width(), 700)
+        self.assertGreaterEqual(self.main_window.minimumSize().height(), 550)
         
     def test_ui_components(self):
         """Test UI components of MainWindow"""

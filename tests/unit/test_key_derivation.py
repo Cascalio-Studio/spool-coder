@@ -62,10 +62,12 @@ class TestKeyDerivation(unittest.TestCase):
 
 def test_key_derivation():
     """Legacy function for backwards compatibility"""
-    unittest.main()
-
-if __name__ == "__main__":
-    unittest.main()
+    # Import required modules
+    from src.services.nfc.bambu_key import derive_bambu_key, CRYPTODOME_AVAILABLE
+    from src.services.nfc.bambu_algorithm import BambuLabNFCEncoder, BambuLabNFCDecoder
+    
+    # Sample UID
+    uid = bytes.fromhex("11223344")
     
     # Derive key
     key = derive_bambu_key(uid)
@@ -105,4 +107,8 @@ if __name__ == "__main__":
     return key
 
 if __name__ == "__main__":
-    test_key_derivation()
+    # Run tests if called directly
+    if len(sys.argv) > 1 and sys.argv[1] == "test":
+        test_key_derivation()
+    else:
+        unittest.main()

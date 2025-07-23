@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="spool-coder",
-    version="0.1.0",
+    version="0.2.0",
     description="Software zum Auslesen und Umprogrammieren von NFC Spulen für Bambulab Filament Rollen",
     author="Cascalio-Studio",
     author_email="your-email@example.com",  # Ersetzen Sie dies durch Ihre E-Mail-Adresse

@@ -13,6 +13,18 @@ class InfoView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        # Store reference to MainWindow for navigation
+        # Check by class name instead of specific import to handle different import paths
+        print(f"InfoView: Parent type: {type(parent)}")
+        print(f"InfoView: Parent class name: {parent.__class__.__name__ if parent else 'None'}")
+        
+        if parent and hasattr(parent, '__class__') and parent.__class__.__name__ == 'MainWindow':
+            self.main_window = parent
+            print("InfoView: MainWindow reference stored successfully")
+        else:
+            self.main_window = None
+            print("InfoView: No MainWindow reference - will search for it")
+        
         # Layout erstellen
         main_layout = QVBoxLayout(self)
         
@@ -35,7 +47,7 @@ class InfoView(QWidget):
         
         about_text = QLabel(
             "<h2>Spool-Coder</h2>"
-            "<p>Version 0.1.0</p>"
+            "<p>Version 0.2.0</p>"
             "<p>Copyright © 2025 Cascalio-Studio</p>"
             "<p>Spool-Coder ist eine Software zum Auslesen und Umprogrammieren "
             "von NFC-Spulen für Bambulab Filament Rollen.</p>"
@@ -97,13 +109,60 @@ class InfoView(QWidget):
         """
         Wird aufgerufen, wenn der Zurück-Button geklickt wird
         """
-        # Finde das MainWindow-Objekt und rufe seine show_home-Methode auf
-        from src.ui.views.main_window import MainWindow
+        # Prevent multiple clicks
+        if hasattr(self, '_back_clicked') and self._back_clicked:
+            return
+        self._back_clicked = True
         
-        # Suche nach dem MainWindow unter den Eltern-Widgets
-        parent = self.parent()
-        while parent and not isinstance(parent, MainWindow):
-            parent = parent.parent()
+        # Disable the back button to prevent multiple clicks
+        self.back_button.setEnabled(False)
+        
+        print("Back button clicked in InfoView")
+        
+        # Use the stored MainWindow reference
+        if self.main_window:
+            print("Using stored MainWindow reference")
+            self.main_window.show_home()
+        else:
+            print("No stored MainWindow reference, searching...")
+            # Fallback: Search for MainWindow in parent hierarchy
+            # Look for any class named MainWindow, regardless of module path
             
-        if parent and isinstance(parent, MainWindow):
-            parent.show_home()
+            current = self.parent()
+            depth = 0
+            max_depth = 10
+            
+            while current and depth < max_depth:
+                print(f"Checking parent at depth {depth}: {type(current)}")
+                # Check if this is a MainWindow by class name, not full module path
+                if hasattr(current, '__class__') and current.__class__.__name__ == 'MainWindow':
+                    print(f"Found MainWindow at depth {depth}: {current.__class__}")
+                    # Check if it has the show_home method
+                    if hasattr(current, 'show_home'):
+                        print("Calling show_home method")
+                        current.show_home()
+                        return
+                    else:
+                        print("MainWindow found but no show_home method")
+                current = current.parent()
+                depth += 1
+            
+            print("Error: Could not find MainWindow in parent hierarchy!")
+            # Last resort: try to find MainWindow through QApplication
+            try:
+                from PyQt6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    for widget in app.allWidgets():
+                        if hasattr(widget, '__class__') and widget.__class__.__name__ == 'MainWindow':
+                            if hasattr(widget, 'show_home'):
+                                print("Found MainWindow through QApplication")
+                                widget.show_home()
+                                return
+                print("Error: Could not find MainWindow anywhere!")
+            except Exception as e:
+                print(f"Error searching for MainWindow: {e}")
+        
+        # Re-enable the button after a short delay
+        from PyQt6.QtCore import QTimer
+        QTimer.singleShot(1000, lambda: self.back_button.setEnabled(True))

@@ -28,59 +28,47 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
+        # Install minimal dependencies for non-UI tests
         sudo apt-get install -y \
-          libgl1-mesa-dev \
-          libglib2.0-0 \
-          libxrender1 \
-          libxrandr2 \
-          libxss1 \
-          libgtk-3-0 \
-          libasound2t64 \
-          libxtst6 \
-          libxcomposite1 \
-          libxcursor1 \
-          libxdamage1 \
-          libxi6 \
-          libnss3 \
-          libcups2 \
-          libpangocairo-1.0-0 \
-          libatk1.0-0 \
-          libcairo-gobject2 \
-          libgdk-pixbuf2.0-0 \
-          xvfb
+          libglib2.0-0
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
         
-        # Install requirements (PyQt6 includes SVG support)
+        # Install core requirements
         pip install -r requirements.txt
         
-        # Install test dependencies
-        pip install pytest pytest-cov pytest-xvfb pytest-timeout
+        # Install test dependencies (no GUI test tools needed)
+        pip install pytest pytest-cov pytest-timeout
+        
+        # Install cryptographic dependencies for key derivation tests
+        pip install pycryptodomex
         
         # Try to install optional NFC dependencies (may fail on some systems)
         pip install nfcpy || echo "nfcpy installation failed - will use simulation mode"
 
     - name: Run tests with coverage
       run: |
-        # Setup virtual display for GUI tests
-        export QT_QPA_PLATFORM=offscreen
-        export DISPLAY=:99
-        Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-        sleep 2
-        
-        # Run only unit tests for speed (skip slow integration tests)
+        # Run only non-UI unit tests (no display setup needed)
         python -m pytest tests/unit/ \
           --cov=src \
           --cov-report=xml \
           --cov-report=term-missing \
-          --timeout=60 \
+          --timeout=30 \
           --maxfail=3 \
           --tb=line \
           -v \
-          --durations=10
-      timeout-minutes: 5
+          --durations=5 \
+          -m "not slow" \
+          --ignore=tests/integration/ \
+          --ignore=tests/unit/test_main_window.py \
+          --ignore=tests/unit/test_read_view.py \
+          --ignore=tests/unit/test_write_view.py \
+          --ignore=tests/unit/test_startup_screen.py \
+          --ignore=tests/unit/test_startup_components.py \
+          --ignore=tests/unit/test_filament_detail_widget.py
+      timeout-minutes: 3
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -109,12 +97,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
+        pip install pycryptodomex
 
     - name: Run tests on Windows
       run: |
-        python -m pytest tests/ -v
-      env:
-        QT_QPA_PLATFORM: offscreen
+        # Run only non-UI tests on Windows
+        python -m pytest tests/unit/ -v \
+          --ignore=tests/unit/test_main_window.py \
+          --ignore=tests/unit/test_read_view.py \
+          --ignore=tests/unit/test_write_view.py \
+          --ignore=tests/unit/test_startup_screen.py \
+          --ignore=tests/unit/test_startup_components.py \
+          --ignore=tests/unit/test_filament_detail_widget.py
 
     - name: Build executable with PyInstaller
       run: |

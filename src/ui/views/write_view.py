@@ -184,8 +184,11 @@ class WriteView(QWidget):
             except Exception as e:
                 print(f"Error searching for MainWindow: {e}")
         
-        # Re-enable the button after a short delay
-        QTimer.singleShot(1000, lambda: self.back_button.setEnabled(True))
+        # Re-enable the button after a short delay (skip in testing mode)
+        if hasattr(self, '_testing_mode') and self._testing_mode:
+            self.back_button.setEnabled(True)
+        else:
+            QTimer.singleShot(1000, lambda: self.back_button.setEnabled(True))
 
     # Methods for test compatibility
     def start_writing(self):

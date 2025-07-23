@@ -101,10 +101,16 @@ def test_key_derivation():
         print(f"Filament type: {decoded_data['spool_data']['type']}")
         print(f"Manufacturer: {decoded_data['spool_data']['manufacturer']}")
         print(f"Name: {decoded_data['spool_data']['name']}")
+        
+        # Assert that the decode was successful (proper test assertion)
+        assert decoded_data is not None, "Decoded data should not be None"
+        assert 'spool_data' in decoded_data, "Decoded data should contain spool_data"
     else:
         print("Failed to decode tag data with derived key!")
+        assert False, "Failed to decode tag data with derived key!"
     
-    return key
+    # Return None to fix pytest warning (tests should not return values)
+    return None
 
 if __name__ == "__main__":
     # Run tests if called directly

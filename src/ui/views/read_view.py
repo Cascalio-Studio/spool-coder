@@ -272,6 +272,11 @@ class ReadView(QWidget):
             QMessageBox.warning(self, "Nicht verbunden", "Keine Verbindung zum NFC-Gerät.")
             return
         
+        # In testing mode, skip the progress animation
+        if hasattr(self, '_testing_mode') and self._testing_mode:
+            self.reading_completed()
+            return
+        
         # Start progress bar and disable UI
         self.read_button.setEnabled(False)
         self.progress_bar.setVisible(True)

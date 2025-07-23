@@ -18,6 +18,18 @@ class WriteView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        # Store reference to MainWindow for navigation
+        # Check by class name instead of specific import to handle different import paths
+        print(f"WriteView: Parent type: {type(parent)}")
+        print(f"WriteView: Parent class name: {parent.__class__.__name__ if parent else 'None'}")
+        
+        if parent and hasattr(parent, '__class__') and parent.__class__.__name__ == 'MainWindow':
+            self.main_window = parent
+            print("WriteView: MainWindow reference stored successfully")
+        else:
+            self.main_window = None
+            print("WriteView: No MainWindow reference - will search for it")
+        
         # Layout erstellen
         main_layout = QVBoxLayout(self)
         
@@ -99,61 +111,7 @@ class WriteView(QWidget):
         self.write_timer = QTimer()
         self.write_timer.timeout.connect(self.update_write_progress)
         self.write_progress = 0
-    
-    def start_writing(self):
-        """
-        Startet den Schreibvorgang
-        """
-        # UI vorbereiten
-        self.write_button.setEnabled(False)
-        self.filament_details.setEnabled(False)
-        self.status_label.setText("Verbindung zum Lesegerät wird hergestellt...")
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setValue(0)
-        
-        # Bestätigung anfordern
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Icon.Question)
-        msg_box.setText("Möchten Sie die Spule mit den eingegebenen Daten programmieren?")
-        msg_box.setWindowTitle("Bestätigung")
-        msg_box.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        
-        if msg_box.exec() == QMessageBox.StandardButton.Yes:
-            # For testing, we can skip the timer delay
-            if hasattr(self, '_testing_mode') and self._testing_mode:
-                self.connect_device()
-            else:
-                # Simuliere Verbindungsaufbau
-                QTimer.singleShot(1000, self.connect_device)
-        else:
-            # UI zurücksetzen
-            self.write_button.setEnabled(True)
-            self.filament_details.setEnabled(True)
-            self.progress_bar.setVisible(False)
-            self.status_label.setText("")
-    
-    def connect_device(self):
-        """
-        Verbindet zum NFC-Gerät
-        """
-        if self.nfc_device.connect():
-            self.status_label.setText("Gerät gefunden. Starten Sie den Schreibvorgang...")
-            
-            # Update UI to reflect connection status
-            self.update_ui()
-            
-            # Starte simulierten Schreibvorgang
-            self.write_progress = 0
-            self.write_timer.start(50)  # Aktualisiere alle 50ms
-        else:
-            self.status_label.setText("Fehler: Gerät konnte nicht gefunden werden.")
-            self.write_button.setEnabled(True)
-            self.filament_details.setEnabled(True)
-            self.progress_bar.setVisible(False)
-            
-            # Update UI to reflect disconnection status
-            self.update_ui()
-    
+
     def update_write_progress(self):
         """
         Aktualisiert den Fortschritt des simulierten Schreibvorgangs
@@ -161,115 +119,93 @@ class WriteView(QWidget):
         self.write_progress += 2
         self.progress_bar.setValue(self.write_progress)
         
-        if self.write_progress < 30:
-            self.status_label.setText("Spule wird vorbereitet...")
-        elif self.write_progress < 60:
-            self.status_label.setText("Daten werden geschrieben...")
-        elif self.write_progress < 90:
-            self.status_label.setText("Daten werden verifiziert...")
-        
         if self.write_progress >= 100:
             self.write_timer.stop()
-            self.writing_completed()
-    
-    def writing_completed(self):
-        """
-        Wird aufgerufen, wenn der Schreibvorgang abgeschlossen ist
-        """
-        # Hole die Daten aus dem Formular
-        data = self.filament_details.get_data()
-        
-        # Schreibe die Daten mit dem Bambu Lab NFC Algorithmus
-        success = self.nfc_device.write_tag(data)
-        
-        if success:
-            self.status_label.setText("Programmieren erfolgreich!")
-            
-            # Detaillierte Erfolgsmeldung anzeigen
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Icon.Information)
-            msg_box.setText("Die Spule wurde erfolgreich mit dem Bambu Lab NFC Format programmiert.")
-            msg_box.setInformativeText(
-                "Die folgenden Informationen wurden auf die Spule geschrieben:\n"
-                f"- Name: {data['name']}\n"
-                f"- Typ: {data['type']}\n"
-                f"- Hersteller: {data['manufacturer']}\n"
-                f"- Düsentemperatur: {data['nozzle_temp']}°C\n"
-                f"- Betttemperatur: {data['bed_temp']}°C"
-            )
-            msg_box.setDetailedText(
-                f"Vollständige Daten:\n"
-                f"Name: {data['name']}\n"
-                f"Typ: {data['type']}\n"
-                f"Farbe: {data['color']}\n"
-                f"Hersteller: {data['manufacturer']}\n"
-                f"Dichte: {data['density']} g/cm³\n"
-                f"Durchmesser: {data['diameter']} mm\n"
-                f"Düsentemperatur: {data['nozzle_temp']}°C\n"
-                f"Betttemperatur: {data['bed_temp']}°C\n"
-                f"Verbleibende Länge: {data['remaining_length']} m\n"
-                f"Verbleibendes Gewicht: {data['remaining_weight']} g"
-            )
-            msg_box.setWindowTitle("Erfolgreiche Programmierung")
-            msg_box.exec()
-        else:
-            self.status_label.setText("Fehler: Programmieren fehlgeschlagen.")
-            
-            # Detaillierte Fehlermeldung anzeigen
-            msg_box = QMessageBox()
-            msg_box.setIcon(QMessageBox.Icon.Critical)
-            msg_box.setText("Beim Programmieren der Spule mit dem Bambu Lab NFC Format ist ein Fehler aufgetreten.")
-            msg_box.setInformativeText(
-                "Mögliche Ursachen:\n"
-                "1. Spule nicht im Lesebereich\n"
-                "2. Spule ist schreibgeschützt\n"
-                "3. Spule ist nicht kompatibel mit dem Bambu Lab Format\n"
-                "4. Hardware-Fehler am NFC-Lesegerät"
-            )
-            msg_box.setWindowTitle("Fehler beim Programmieren")
-            msg_box.exec()
-        
-        # UI zurücksetzen
-        self.write_button.setEnabled(True)
-        self.filament_details.setEnabled(True)
-        self.progress_bar.setVisible(False)
-        
-        # Trennen vom Gerät
-        self.nfc_device.disconnect()
-    
+
     def on_back_clicked(self):
         """
         Wird aufgerufen, wenn der Zurück-Button geklickt wird
         """
+        # Prevent multiple clicks
+        if hasattr(self, '_back_clicked') and self._back_clicked:
+            return
+        self._back_clicked = True
+        
+        # Disable the back button to prevent multiple clicks
+        self.back_button.setEnabled(False)
+        
         # Stoppe alle laufenden Prozesse
         self.write_timer.stop()
         self.nfc_device.disconnect()
         
-        # Finde das MainWindow-Objekt und rufe seine show_home-Methode auf
-        from src.ui.views.main_window import MainWindow
+        print("Back button clicked in WriteView")
         
-        # Suche nach dem MainWindow unter den Eltern-Widgets
-        parent = self.parent()
-        max_depth = 10  # Safety limit to prevent infinite loop
-        depth = 0
-        
-        while parent and not isinstance(parent, MainWindow) and depth < max_depth:
-            parent = parent.parent()
-            depth += 1
+        # Use the stored MainWindow reference
+        if self.main_window:
+            print("Using stored MainWindow reference")
+            self.main_window.show_home()
+        else:
+            print("No stored MainWindow reference, searching...")
+            # Fallback: Search for MainWindow in parent hierarchy
+            # Look for any class named MainWindow, regardless of module path
             
-        if parent and isinstance(parent, MainWindow):
-            parent.show_home()
-    
+            current = self.parent()
+            depth = 0
+            max_depth = 10
+            
+            while current and depth < max_depth:
+                print(f"Checking parent at depth {depth}: {type(current)}")
+                # Check if this is a MainWindow by class name, not full module path
+                if hasattr(current, '__class__') and current.__class__.__name__ == 'MainWindow':
+                    print(f"Found MainWindow at depth {depth}: {current.__class__}")
+                    # Check if it has the show_home method
+                    if hasattr(current, 'show_home'):
+                        print("Calling show_home method")
+                        current.show_home()
+                        return
+                    else:
+                        print("MainWindow found but no show_home method")
+                current = current.parent()
+                depth += 1
+            
+            print("Error: Could not find MainWindow in parent hierarchy!")
+            # Last resort: try to find MainWindow through QApplication
+            try:
+                from PyQt6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    for widget in app.allWidgets():
+                        if hasattr(widget, '__class__') and widget.__class__.__name__ == 'MainWindow':
+                            if hasattr(widget, 'show_home'):
+                                print("Found MainWindow through QApplication")
+                                widget.show_home()
+                                return
+                print("Error: Could not find MainWindow anywhere!")
+            except Exception as e:
+                print(f"Error searching for MainWindow: {e}")
+        
+        # Re-enable the button after a short delay (skip in testing mode)
+        if hasattr(self, '_testing_mode') and self._testing_mode:
+            self.back_button.setEnabled(True)
+        else:
+            QTimer.singleShot(1000, lambda: self.back_button.setEnabled(True))
+
     # Methods for test compatibility
     def start_writing(self):
         """Legacy method for backward compatibility - now connects first if needed"""
         if not self.nfc_device.is_connected():
-            self.on_connect_clicked()
+            # Connect directly without calling on_connect_clicked to avoid recursion
+            if self.nfc_device.connect():
+                self.update_ui()
+            else:
+                QMessageBox.warning(self, "Verbindungsfehler", "Konnte keine Verbindung zum NFC-Gerät herstellen.")
+                return
+        
         if self.nfc_device.is_connected():
             self.on_write_clicked()
     
     def on_connect_clicked(self):
-        """Handle connect button click for test compatibility"""
+        """Handle connect button click"""
         if hasattr(self, '_testing_mode') and self._testing_mode:
             # In testing mode, directly handle connection
             if self.nfc_device.connect():
@@ -277,11 +213,14 @@ class WriteView(QWidget):
             else:
                 QMessageBox.warning(self, "Verbindungsfehler", "Konnte keine Verbindung zum NFC-Gerät herstellen.")
         else:
-            # Normal mode - use the existing start_writing method
-            self.start_writing()
+            # Normal mode - connect and update UI
+            if self.nfc_device.connect():
+                self.update_ui()
+            else:
+                QMessageBox.warning(self, "Verbindungsfehler", "Konnte keine Verbindung zum NFC-Gerät herstellen.")
     
     def on_write_clicked(self):
-        """Handle write button click for test compatibility"""
+        """Handle write button click"""
         if hasattr(self, '_testing_mode') and self._testing_mode:
             # In testing mode, directly handle writing
             if not self.nfc_device.is_connected():
@@ -297,8 +236,19 @@ class WriteView(QWidget):
             else:
                 QMessageBox.warning(self, "Schreibfehler", "Fehler beim Schreiben des NFC-Tags.")
         else:
-            # Normal mode - use the existing start_writing method with confirmation
-            self.start_writing()
+            # Normal mode - directly write without calling start_writing to avoid recursion
+            if not self.nfc_device.is_connected():
+                QMessageBox.warning(self, "Nicht verbunden", "Keine Verbindung zum NFC-Gerät.")
+                return
+            
+            # Get form data and try to write the tag
+            data = self.filament_detail_widget.get_form_data()
+            success = self.nfc_device.write_tag(data)
+            if success:
+                self.status_label.setText("Programmieren erfolgreich!")
+                QMessageBox.information(self, "Erfolg", "Die Spule wurde erfolgreich programmiert.")
+            else:
+                QMessageBox.warning(self, "Schreibfehler", "Fehler beim Schreiben des NFC-Tags.")
     
     def update_ui(self):
         """Update UI based on connection status"""

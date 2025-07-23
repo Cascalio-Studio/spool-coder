@@ -8,9 +8,7 @@ I've successfully created a comprehensive CI/CD pipeline for SpoolCoder that wil
 - `.github/workflows/build-and-test.yml` - Main CI/CD pipeline
 
 ### Build Scripts
-- `build.py` - Cross-platform Python build script  
-- `build_windows.bat` - Windows batch script for local builds
-- `SpoolCoder.spec` - Advanced PyInstaller configuration
+- `build.py` - Cross-platform Python build script for Windows, macOS, and Linux
 
 ### Documentation
 - `docs/CI_CD_Build_Guide.md` - Complete build and CI/CD guide
@@ -27,14 +25,14 @@ I've successfully created a comprehensive CI/CD pipeline for SpoolCoder that wil
 
 ### Local Building
 ```bash
-# Quick Windows build
-build_windows.bat
-
-# Advanced Python build 
+# Build for your current platform
 python build.py
 
 # Debug build
 python build.py --debug
+
+# Build directory version (not single file)
+python build.py --onedir
 ```
 
 ## 🎯 Features

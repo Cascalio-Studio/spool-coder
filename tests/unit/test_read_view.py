@@ -99,18 +99,20 @@ class TestReadView(unittest.TestCase):
         self.mock_nfc_device.is_connected.return_value = True
         self.mock_nfc_device.read_tag.return_value = self.test_spool_data
         
-        # Call the read method
-        with patch.object(self.view.filament_detail_widget, 'fill_form') as mock_fill_form:
-            self.view.on_read_clicked()
-            
-            # Check if read_tag method was called
-            self.mock_nfc_device.read_tag.assert_called_once()
-            
-            # Check if form was filled
-            mock_fill_form.assert_called_once()
-            
-            # Check that status label is updated (not empty)
-            self.assertNotEqual(self.view.status_label.text(), "")
+        # Reset mock call count
+        self.mock_nfc_device.read_tag.reset_mock()
+        
+        # Call the read method and immediately complete the reading
+        self.view.on_read_clicked()
+        
+        # Since reading is asynchronous via timer, we need to simulate completion
+        self.view.reading_completed()
+        
+        # Check if read_tag method was called exactly once after reset
+        self.mock_nfc_device.read_tag.assert_called_once()
+        
+        # Check that status label is updated (not empty)
+        self.assertNotEqual(self.view.status_label.text(), "")
     
     def test_on_read_clicked_not_connected(self):
         """Test read button click when not connected"""
@@ -133,11 +135,17 @@ class TestReadView(unittest.TestCase):
         self.mock_nfc_device.is_connected.return_value = True
         self.mock_nfc_device.read_tag.return_value = None
         
-        # Call the read method
+        # Reset mock call count
+        self.mock_nfc_device.read_tag.reset_mock()
+        
+        # Call the read method and immediately complete the reading
+        self.view.on_read_clicked()
+        
+        # Since reading is asynchronous via timer, we need to simulate completion
         with patch('PyQt6.QtWidgets.QMessageBox.warning') as mock_warning:
-            self.view.on_read_clicked()
+            self.view.reading_completed()
             
-            # Check if read_tag method was called
+            # Check if read_tag method was called exactly once after reset
             self.mock_nfc_device.read_tag.assert_called_once()
             
             # Check if warning message was shown

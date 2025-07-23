@@ -49,24 +49,22 @@ The pipeline runs on:
 
 ## Local Building
 
-### Quick Build (Windows)
+### Cross-Platform Build
 
-Use the provided batch script:
+Use the Python build script for all platforms:
 
 ```bash
 # Run from project root
-build_windows.bat
+python build.py
 ```
 
 This script will:
 1. Install dependencies
 2. Run tests
 3. Clean previous builds
-4. Create `SpoolCoder.exe` in the `dist/` folder
+4. Create `SpoolCoder.exe` (Windows) or equivalent executable in the `dist/` folder
 
-### Cross-Platform Build
-
-Use the Python build script for more control:
+### Build Options
 
 ```bash
 # Basic build

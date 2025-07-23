@@ -167,7 +167,7 @@ def create_executable(debug=False, onedir=False):
             cmd.extend(["--icon", str(icon_path)])
     
     # Main script
-    cmd.append("src/main.py")
+    cmd.append("main.py")
     
     # Run PyInstaller
     run_command(cmd, f"Building executable for {system.title()}")
@@ -272,8 +272,8 @@ def main():
     print(f"Architecture: {platform.machine()}")
     
     # Ensure we're in the project directory
-    if not Path("src/main.py").exists():
-        print("❌ Error: src/main.py not found. Please run this script from the project root.")
+    if not Path("main.py").exists():
+        print("❌ Error: main.py not found. Please run this script from the project root.")
         sys.exit(1)
     
     try:

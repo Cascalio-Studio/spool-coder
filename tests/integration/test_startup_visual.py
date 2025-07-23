@@ -4,10 +4,13 @@ Visual test for the startup screen layout
 """
 
 import sys
+import pytest
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
 from src.ui.components.startup_screen import StartupScreen
 
+@pytest.mark.slow
+@pytest.mark.integration
 def show_startup_screen_test():
     """Show the startup screen for a few seconds for visual verification"""
     app = QApplication(sys.argv)

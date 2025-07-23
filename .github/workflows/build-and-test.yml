@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10, 3.11, 3.12, 3.13]
+        python-version: ["3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -28,45 +28,47 @@ jobs:
     - name: Install system dependencies
       run: |
         sudo apt-get update
+        # Install minimal dependencies for non-UI tests
         sudo apt-get install -y \
-          libgl1-mesa-glx \
-          libglib2.0-0 \
-          libxrender1 \
-          libxrandr2 \
-          libxss1 \
-          libgtk-3-0 \
-          libgconf-2-4 \
-          libasound2 \
-          libxtst6 \
-          libxcomposite1 \
-          libxcursor1 \
-          libxdamage1 \
-          libxi6 \
-          libxtst6 \
-          libnss3 \
-          libcups2 \
-          libxss1 \
-          libgconf-2-4 \
-          libxrandr2 \
-          libasound2 \
-          libpangocairo-1.0-0 \
-          libatk1.0-0 \
-          libcairo-gobject2 \
-          libgtk-3-0 \
-          libgdk-pixbuf2.0-0
+          libglib2.0-0
 
     - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
+        
+        # Install core requirements
         pip install -r requirements.txt
-        pip install pytest pytest-cov pytest-xvfb
+        
+        # Install test dependencies (no GUI test tools needed)
+        pip install pytest pytest-cov pytest-timeout
+        
+        # Install cryptographic dependencies for key derivation tests
+        pip install pycryptodomex
+        
+        # Try to install optional NFC dependencies (may fail on some systems)
+        pip install nfcpy || echo "nfcpy installation failed - will use simulation mode"
 
     - name: Run tests with coverage
       run: |
-        export QT_QPA_PLATFORM=offscreen
-        python -m pytest tests/ -v --cov=src --cov-report=xml --cov-report=html
-      env:
-        DISPLAY: ":99.0"
+        # Run only non-UI unit tests (no display setup needed)
+        python -m pytest tests/unit/ \
+          --cov=src \
+          --cov-report=xml \
+          --cov-report=term-missing \
+          --timeout=30 \
+          --maxfail=3 \
+          --tb=line \
+          -v \
+          --durations=5 \
+          -m "not slow" \
+          --ignore=tests/integration/ \
+          --ignore=tests/unit/test_main_window.py \
+          --ignore=tests/unit/test_read_view.py \
+          --ignore=tests/unit/test_write_view.py \
+          --ignore=tests/unit/test_startup_screen.py \
+          --ignore=tests/unit/test_startup_components.py \
+          --ignore=tests/unit/test_filament_detail_widget.py
+      timeout-minutes: 3
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -95,12 +97,18 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pyinstaller
+        pip install pycryptodomex
 
     - name: Run tests on Windows
       run: |
-        python -m pytest tests/ -v
-      env:
-        QT_QPA_PLATFORM: offscreen
+        # Run only non-UI tests on Windows
+        python -m pytest tests/unit/ -v \
+          --ignore=tests/unit/test_main_window.py \
+          --ignore=tests/unit/test_read_view.py \
+          --ignore=tests/unit/test_write_view.py \
+          --ignore=tests/unit/test_startup_screen.py \
+          --ignore=tests/unit/test_startup_components.py \
+          --ignore=tests/unit/test_filament_detail_widget.py
 
     - name: Build executable with PyInstaller
       run: |

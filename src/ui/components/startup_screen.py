@@ -257,7 +257,7 @@ class StartupScreen(QWidget):
         frame_layout.addStretch()
         
         # Version label
-        self.version_label = QLabel("Version 0.1.0")
+        self.version_label = QLabel("Version 0.2.0")
         self.version_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         font = QFont("Arial", 8)
         self.version_label.setFont(font)

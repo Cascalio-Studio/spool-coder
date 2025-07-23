@@ -18,6 +18,18 @@ class ReadView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
+        # Store reference to MainWindow for navigation
+        # Check by class name instead of specific import to handle different import paths
+        print(f"ReadView: Parent type: {type(parent)}")
+        print(f"ReadView: Parent class name: {parent.__class__.__name__ if parent else 'None'}")
+        
+        if parent and hasattr(parent, '__class__') and parent.__class__.__name__ == 'MainWindow':
+            self.main_window = parent
+            print("ReadView: MainWindow reference stored successfully")
+        else:
+            self.main_window = None
+            print("ReadView: No MainWindow reference - will search for it")
+        
         # Layout erstellen
         main_layout = QVBoxLayout(self)
         
@@ -85,52 +97,88 @@ class ReadView(QWidget):
         self.read_timer = QTimer()
         self.read_timer.timeout.connect(self.update_read_progress)
         self.read_progress = 0
-    
-    def start_reading(self):
+
+    def on_back_clicked(self):
         """
-        Startet den Lesevorgang
+        Wird aufgerufen, wenn der Zurück-Button geklickt wird
         """
-        # UI vorbereiten
-        self.read_button.setEnabled(False)
-        self.status_label.setText("Verbindung zum Lesegerät wird hergestellt...")
-        self.progress_bar.setVisible(True)
-        self.progress_bar.setValue(0)
-        self.filament_details.setVisible(False)
+        # Prevent multiple clicks
+        if hasattr(self, '_back_clicked') and self._back_clicked:
+            return
+        self._back_clicked = True
         
-        # For testing, we can skip the timer delay
-        if hasattr(self, '_testing_mode') and self._testing_mode:
-            self.connect_device()
+        # Disable the back button to prevent multiple clicks
+        self.back_button.setEnabled(False)
+        
+        # Stoppe alle laufenden Prozesse
+        self.read_timer.stop()
+        self.nfc_device.disconnect()
+        
+        print("Back button clicked in ReadView")
+        
+        # Use the stored MainWindow reference
+        if self.main_window:
+            print("Using stored MainWindow reference")
+            self.main_window.show_home()
         else:
-            # Simuliere Verbindungsaufbau
-            QTimer.singleShot(1000, self.connect_device)
-    
-    def connect_device(self):
-        """
-        Verbindet zum NFC-Gerät
-        """
-        if self.nfc_device.connect():
-            self.status_label.setText("Gerät gefunden. Suche nach Spule...")
+            print("No stored MainWindow reference, searching...")
+            # Fallback: Search for MainWindow in parent hierarchy
+            # Look for any class named MainWindow, regardless of module path
             
-            # Update UI to reflect connection status
-            self.update_ui()
+            current = self.parent()
+            depth = 0
+            max_depth = 10
             
-            # Starte simulierten Lesevorgang
-            self.read_progress = 0
-            self.read_timer.start(50)  # Aktualisiere alle 50ms
-        else:
-            self.status_label.setText("Fehler: Gerät konnte nicht gefunden werden.")
-            self.read_button.setEnabled(True)
-            self.progress_bar.setVisible(False)
+            while current and depth < max_depth:
+                print(f"Checking parent at depth {depth}: {type(current)}")
+                # Check if this is a MainWindow by class name, not full module path
+                if hasattr(current, '__class__') and current.__class__.__name__ == 'MainWindow':
+                    print(f"Found MainWindow at depth {depth}: {current.__class__}")
+                    # Check if it has the show_home method
+                    if hasattr(current, 'show_home'):
+                        print("Calling show_home method")
+                        current.show_home()
+                        return
+                    else:
+                        print("MainWindow found but no show_home method")
+                current = current.parent()
+                depth += 1
             
-            # Update UI to reflect disconnection status
-            self.update_ui()
-    
+            print("Error: Could not find MainWindow in parent hierarchy!")
+            # Last resort: try to find MainWindow through QApplication
+            try:
+                from PyQt6.QtWidgets import QApplication
+                app = QApplication.instance()
+                if app:
+                    for widget in app.allWidgets():
+                        if hasattr(widget, '__class__') and widget.__class__.__name__ == 'MainWindow':
+                            if hasattr(widget, 'show_home'):
+                                print("Found MainWindow through QApplication")
+                                widget.show_home()
+                                return
+                print("Error: Could not find MainWindow anywhere!")
+            except Exception as e:
+                print(f"Error searching for MainWindow: {e}")
+        
+        # Re-enable the button after a short delay
+        QTimer.singleShot(1000, lambda: self.back_button.setEnabled(True))
+
     def update_read_progress(self):
         """
         Aktualisiert den Fortschritt des simulierten Lesevorgangs
         """
-        self.read_progress += 2
+        self.read_progress += 4  # Faster progress for better UX
         self.progress_bar.setValue(self.read_progress)
+        
+        # Update status text based on progress
+        if self.read_progress < 30:
+            self.status_label.setText("Verbinde mit NFC-Tag...")
+        elif self.read_progress < 60:
+            self.status_label.setText("Lese Bambu Lab Daten...")
+        elif self.read_progress < 90:
+            self.status_label.setText("Entschlüssele Daten...")
+        else:
+            self.status_label.setText("Validiere Daten...")
         
         if self.read_progress >= 100:
             self.read_timer.stop()
@@ -140,27 +188,32 @@ class ReadView(QWidget):
         """
         Wird aufgerufen, wenn der Lesevorgang abgeschlossen ist
         """
-        # NFC Tag mit Bambu Lab Algorithmus lesen
+        # Try to read the tag
         data = self.nfc_device.read_tag()
         
         if data:
             self.status_label.setText("Auslesen erfolgreich!")
             
-            # Zeige erweiterte Erfolgsmeldung
+            # Show success message
             QMessageBox.information(
                 self,
                 "Bambu Lab NFC Tag erkannt",
                 "Die Bambu Lab NFC Spule wurde erfolgreich ausgelesen und decodiert."
             )
             
-            # Konvertiere die Daten in ein FilamentSpool-Objekt und zeige sie an
-            spool = FilamentSpool.from_dict(data)
-            self.filament_details.set_data(spool.to_dict())
-            self.filament_details.setVisible(True)
+            # Convert data to FilamentSpool object and display
+            try:
+                spool = FilamentSpool.from_dict(data)
+                self.filament_details.set_data(spool.to_dict())
+                self.filament_details.setVisible(True)
+            except Exception as e:
+                # Fallback: just fill the form directly
+                self.filament_detail_widget.fill_form(data)
+                self.filament_details.setVisible(True)
         else:
             self.status_label.setText("Fehler: Keine Daten gefunden oder Spule nicht erkannt.")
             
-            # Zeige detaillierte Fehlermeldung
+            # Show detailed error message
             QMessageBox.warning(
                 self,
                 "Fehler beim Lesen",
@@ -170,42 +223,36 @@ class ReadView(QWidget):
                 "3. NFC-Tag nicht innerhalb der Lesereichweite"
             )
         
-        # UI zurücksetzen
+        # Reset UI
         self.read_button.setEnabled(True)
         self.progress_bar.setVisible(False)
-        
-        # Trennen vom Gerät
-        self.nfc_device.disconnect()
-    
-    def on_back_clicked(self):
-        """
-        Wird aufgerufen, wenn der Zurück-Button geklickt wird
-        """
-        # Stoppe alle laufenden Prozesse
-        self.read_timer.stop()
-        self.nfc_device.disconnect()
-        
-        # Finde das MainWindow-Objekt und rufe seine show_home-Methode auf
-        from src.ui.views.main_window import MainWindow
-        
-        # Suche nach dem MainWindow unter den Eltern-Widgets
-        parent = self.parent()
-        while parent and not isinstance(parent, MainWindow):
-            parent = parent.parent()
-            
-        if parent and isinstance(parent, MainWindow):
-            parent.show_home()
-    
+
     # Methods for test compatibility
     def start_reading(self):
         """Legacy method for backward compatibility - now connects first if needed"""
         if not self.nfc_device.is_connected():
-            self.on_connect_clicked()
-        if self.nfc_device.is_connected():
+            # Connect directly without calling on_connect_clicked to avoid recursion
+            if self.nfc_device.connect():
+                self.update_ui()
+            else:
+                QMessageBox.warning(self, "Verbindungsfehler", "Konnte keine Verbindung zum NFC-Gerät herstellen.")
+                return
+        
+        # In testing mode, skip the progress bar for faster execution
+        if hasattr(self, '_testing_mode') and self._testing_mode:
+            data = self.nfc_device.read_tag()
+            if data:
+                self.filament_detail_widget.fill_form(data)
+                self.status_label.setText("Auslesen erfolgreich!")
+                self.filament_details.setVisible(True)
+            else:
+                QMessageBox.warning(self, "Lesefehler", "Fehler beim Lesen des NFC-Tags.")
+        else:
+            # Use the progress bar for normal operation
             self.on_read_clicked()
     
     def on_connect_clicked(self):
-        """Handle connect button click for test compatibility"""
+        """Handle connect button click"""
         if hasattr(self, '_testing_mode') and self._testing_mode:
             # In testing mode, directly handle connection
             if self.nfc_device.connect():
@@ -213,28 +260,33 @@ class ReadView(QWidget):
             else:
                 QMessageBox.warning(self, "Verbindungsfehler", "Konnte keine Verbindung zum NFC-Gerät herstellen.")
         else:
-            # Normal mode - use the existing start_reading method
-            self.start_reading()
+            # Normal mode - connect and update UI
+            if self.nfc_device.connect():
+                self.update_ui()
+            else:
+                QMessageBox.warning(self, "Verbindungsfehler", "Konnte keine Verbindung zum NFC-Gerät herstellen.")
     
     def on_read_clicked(self):
-        """Handle read button click for test compatibility"""
+        """Handle read button click"""
+        if not self.nfc_device.is_connected():
+            QMessageBox.warning(self, "Nicht verbunden", "Keine Verbindung zum NFC-Gerät.")
+            return
+        
+        # In testing mode, skip the progress animation
         if hasattr(self, '_testing_mode') and self._testing_mode:
-            # In testing mode, directly handle reading
-            if not self.nfc_device.is_connected():
-                QMessageBox.warning(self, "Nicht verbunden", "Keine Verbindung zum NFC-Gerät.")
-                return
-            
-            # Try to read the tag
-            data = self.nfc_device.read_tag()
-            if data:
-                # Success - fill the form and update status
-                self.filament_detail_widget.fill_form(data)
-                self.status_label.setText("Auslesen erfolgreich!")
-            else:
-                QMessageBox.warning(self, "Lesefehler", "Fehler beim Lesen des NFC-Tags.")
-        else:
-            # Normal mode - use the existing start_reading method
-            self.start_reading()
+            self.reading_completed()
+            return
+        
+        # Start progress bar and disable UI
+        self.read_button.setEnabled(False)
+        self.progress_bar.setVisible(True)
+        self.progress_bar.setValue(0)
+        self.status_label.setText("Lese NFC-Tag...")
+        self.filament_details.setVisible(False)
+        
+        # Start the reading process with progress animation
+        self.read_progress = 0
+        self.read_timer.start(50)  # Update every 50ms
     
     def update_ui(self):
         """Update UI based on connection status"""

@@ -13,7 +13,7 @@ import os
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 from PyQt6.QtWidgets import QApplication
-from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtCore import Qt, QTimer, QSettings
 from PyQt6.QtGui import QIcon
 
 from ui.views.main_window import MainWindow
@@ -28,8 +28,13 @@ def setup_application():
     )
     
     app = QApplication(sys.argv)
+    
+    # Configure QSettings
+    QSettings.setDefaultFormat(QSettings.Format.IniFormat)
+    app.setOrganizationName("Cascalio-Studio")
+    app.setOrganizationDomain("cascalio-studio.com")
     app.setApplicationName("Spool-Coder")
-    app.setApplicationVersion("0.1.1")
+    app.setApplicationVersion("0.2.0")
     app.setOrganizationName("Cascalio Studio")
     app.setOrganizationDomain("cascalio.studio")
     
@@ -58,9 +63,9 @@ def get_initialization_tasks():
     def init_bambu_algorithm():
         """Initialize Bambu Lab algorithm"""
         try:
-            from services.nfc.bambu_algorithm import BambuAlgorithm
+            from services.nfc.bambu_algorithm import BambuLabNFCDecoder, BambuLabNFCEncoder
             # Initialize algorithm components
-            pass
+            print("Bambu Lab NFC algorithm initialized successfully")
         except ImportError as e:
             print(f"Bambu algorithm not available: {e}")
     

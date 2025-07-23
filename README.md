@@ -1,6 +1,18 @@
 # spool-coder
 Analyze and reprogram bambulab filament spools
 
+## Quick Start
+
+### Running the Application
+```bash
+python main.py
+```
+
+### Building Executable
+```bash
+python build.py
+```
+
 ## Environment Setup
 
 For production use, you need to set the `BAMBU_XOR_KEY` environment variable with the correct XOR key used for decoding and encoding NFC tags.

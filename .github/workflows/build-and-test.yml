@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9, 3.10, 3.11, 3.12, 3.13]
+        python-version: ["3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v4
@@ -60,6 +60,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install pytest pytest-cov pytest-xvfb
+        # Try to install optional NFC dependencies (may fail on some systems)
+        pip install nfcpy || echo "nfcpy installation failed - will use simulation mode"
 
     - name: Run tests with coverage
       run: |

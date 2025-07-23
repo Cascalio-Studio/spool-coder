@@ -122,17 +122,19 @@ class BambuLabNFCDecoder:
         if not self._verify_header(raw_data):
             return None
         
-        # Try to extract UID from the raw data if not provided
-        if not self._tag_uid:
+        # Try to extract UID from the raw data if not provided and tag_uid parameter is not explicitly None
+        if not self._tag_uid and tag_uid is not False:  # Use False to explicitly disable UID-based derivation
             try:
                 # For simulation or when no real UID is available, use a default UID
                 # In real scenarios, the UID would come from the NFC reader
-                default_uid = b'\xaa\x55\xcc\x33'  # Default UID for testing/simulation
-                derived_key = derive_bambu_key(default_uid)
-                if derived_key:
-                    self._xor_key = derived_key
-                    self._tag_uid = default_uid
-                    print(f"INFO: Using derived key from detected tag UID: {default_uid.hex()}")
+                # Only do this if tag_uid is not explicitly set to None/False
+                if tag_uid is not None:  # None means don't force derivation
+                    default_uid = b'\xaa\x55\xcc\x33'  # Default UID for testing/simulation
+                    derived_key = derive_bambu_key(default_uid)
+                    if derived_key:
+                        self._xor_key = derived_key
+                        self._tag_uid = default_uid
+                        print(f"INFO: Using derived key from detected tag UID: {default_uid.hex()}")
             except Exception as e:
                 # Fallback to default key
                 pass

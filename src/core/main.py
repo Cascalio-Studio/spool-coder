@@ -58,9 +58,9 @@ def get_initialization_tasks():
     def init_bambu_algorithm():
         """Initialize Bambu Lab algorithm"""
         try:
-            from services.nfc.bambu_algorithm import BambuAlgorithm
+            from services.nfc.bambu_algorithm import BambuLabNFCDecoder, BambuLabNFCEncoder
             # Initialize algorithm components
-            pass
+            print("Bambu Lab NFC algorithm initialized successfully")
         except ImportError as e:
             print(f"Bambu algorithm not available: {e}")
     

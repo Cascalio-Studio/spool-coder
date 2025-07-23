@@ -23,7 +23,11 @@ class DemoView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         
-        # Create the NFC algorithm instances
+        # Create a consistent UID for demo purposes
+        self.demo_uid = b'\xaa\x55\xcc\x33'  # Standard demo UID
+        
+        # Create the NFC algorithm instances without UID for now (use default keys)
+        # This avoids potential issues with key derivation in demo mode
         self.encoder = BambuLabNFCEncoder()
         self.decoder = BambuLabNFCDecoder()
         
@@ -68,6 +72,11 @@ class DemoView(QWidget):
         sample_btn = QPushButton("Load Sample Data")
         sample_btn.clicked.connect(self.on_sample_clicked)
         left_layout.addWidget(sample_btn)
+        
+        # Test button to verify encode/decode works
+        test_btn = QPushButton("Test Encode/Decode")
+        test_btn.clicked.connect(self.on_test_clicked)
+        left_layout.addWidget(test_btn)
         
         # Encode button
         encode_btn = QPushButton("Encode Data")
@@ -150,6 +159,42 @@ class DemoView(QWidget):
             self.status_label.setText(f"Error loading sample data: {str(e)}")
     
     @pyqtSlot()
+    def on_test_clicked(self):
+        """Test the encode/decode functionality with known good data"""
+        try:
+            # Use SAMPLE_TAG_DATA from the bambu_algorithm module
+            print("Testing encode/decode with sample data...")
+            
+            # Encode the sample data (use None for UID to use default key)
+            encoded_data = self.encoder.encode_tag_data(SAMPLE_TAG_DATA, tag_uid=None)
+            print(f"Encoded data length: {len(encoded_data)} bytes")
+            
+            # Try to decode it back (use None for UID to use default key)
+            decoded_data = self.decoder.decode_tag_data(encoded_data, tag_uid=None)
+            
+            if decoded_data:
+                QMessageBox.information(self, "Test Successful", 
+                                      "Encode/Decode test passed! The algorithm is working correctly.")
+                
+                # Show the decoded data in the text area for reference
+                json_data = json.dumps(decoded_data, indent=2)
+                self.decoded_text.setText(json_data)
+                
+                # Convert to base64 and show in encoded area
+                base64_data = base64.b64encode(encoded_data).decode('ascii')
+                self.encoded_text.setText(base64_data)
+                
+                self.status_label.setText("Test successful - algorithm is working")
+            else:
+                QMessageBox.warning(self, "Test Failed", 
+                                  "Encode/Decode test failed! There might be an issue with the algorithm.")
+                self.status_label.setText("Test failed - check algorithm")
+                
+        except Exception as e:
+            QMessageBox.critical(self, "Test Error", f"Error during test: {str(e)}")
+            self.status_label.setText(f"Test error: {str(e)}")
+    
+    @pyqtSlot()
     def on_encode_clicked(self):
         """Encode the form data to NFC tag format"""
         try:
@@ -181,8 +226,8 @@ class DemoView(QWidget):
                 }
             }
             
-            # Encode the data
-            encoded_data = self.encoder.encode_tag_data(tag_data)
+            # Encode the data using default key (more reliable for demo)
+            encoded_data = self.encoder.encode_tag_data(tag_data, tag_uid=None)
             
             # Convert to base64 for display
             base64_data = base64.b64encode(encoded_data).decode('ascii')
@@ -211,8 +256,8 @@ class DemoView(QWidget):
                 QMessageBox.warning(self, "Invalid Data", "The data is not valid base64")
                 return
                 
-            # Decode the data
-            decoded_data = self.decoder.decode_tag_data(raw_data)
+            # Decode the data using default key (more reliable for demo)
+            decoded_data = self.decoder.decode_tag_data(raw_data, tag_uid=None)
             
             if decoded_data:
                 # Format as JSON for display

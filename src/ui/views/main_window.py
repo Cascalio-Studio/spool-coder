@@ -204,7 +204,7 @@ class MainWindow(QMainWindow):
     
     def setup_menu(self):
         """
-        Erstellt die erweiterte Menüleiste
+        Creates the extended menu bar
         """
         self.menuBar = QMenuBar(self)
         self.setMenuBar(self.menuBar)
